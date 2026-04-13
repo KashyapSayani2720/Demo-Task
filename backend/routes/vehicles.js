@@ -39,7 +39,7 @@ router.post('/', async (req, res, next) => {
     const vehicle = await Vehicle.create({
       stock_id,
       plate: normalizePlate(b.plate),
-      model: normalizeString(b.model),
+      make_model: normalizeString(b.make_model),
       month: normalizeMonth(b.date_acquired || new Date()),
       date_acquired: normalizeDate(b.date_acquired) || new Date().toISOString().slice(0, 10),
       source: normalizeString(b.source),
@@ -63,7 +63,7 @@ router.put('/:stock_id', async (req, res, next) => {
     if (!v) return res.status(404).json({ error: 'Vehicle not found' });
     const b = req.body;
     if (b.plate !== undefined) v.plate = normalizePlate(b.plate);
-    if (b.model !== undefined) v.model = normalizeString(b.model);
+    if (b.make_model !== undefined) v.make_model = normalizeString(b.make_model);
     if (b.source !== undefined) v.source = normalizeString(b.source);
     if (b.investor !== undefined) v.investor = normalizeString(b.investor);
     if (b.purchase_price !== undefined) v.purchase_price = normalizeAmount(b.purchase_price);
@@ -115,7 +115,7 @@ router.post('/:stock_id/sell', async (req, res, next) => {
       amount: v.sold_price,
       stock_id: v.stock_id,
       plate: v.plate,
-      notes: `${v.model} - ${v.plate}`
+      notes: `${v.make_model} - ${v.plate}`
     });
 
     res.json(v);

@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const vehicleSchema = new mongoose.Schema({
   stock_id: { type: String, unique: true, index: true },
   plate: { type: String, index: true },
-  model: { type: String, default: '' },
+  make_model: { type: String, default: '' },
   month: { type: String, default: '' },
   date_acquired: { type: String, default: '' },
   source: { type: String, default: '' },

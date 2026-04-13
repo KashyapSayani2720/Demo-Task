@@ -1290,11 +1290,11 @@ function rebuildFinLog() {
     const notePlate = ((e.notes||'') + ' ' + (e.from||'')).match(/[A-Z]{2}\d{2}\s?[A-Z]{3}/i);
     const plate = notePlate ? notePlate[0].replace(/\s+/g,' ').trim().toUpperCase() : '';
     const vehicle = plate ? stockData.find(v=>normP(v.plate)===normP(plate)) || APP_DATA.sold.find(v=>normP(v.plate)===normP(plate)) : null;
-    finLog.push({id:'h'+i, date:(e.date||e.month||'').slice(0,10), plate: plate, model: vehicle ? vehicle.model : '', desc:[(e.from||''),(e.notes||e.category||'')].filter(Boolean).join(' · '), cat:e.category||'Other', amount:e.amount||0});
+    finLog.push({id:'h'+i, date:(e.date||e.month||'').slice(0,10), plate: plate, model: vehicle ? vehicle.make_model : '', desc:[(e.from||''),(e.notes||e.category||'')].filter(Boolean).join(' · '), cat:e.category||'Other', amount:e.amount||0});
   });
   (APP_DATA.money_in||[]).forEach((e,i)=>{
     const vehicle = e.plate ? stockData.find(v=>normP(v.plate)===normP(e.plate)) || APP_DATA.sold.find(v=>normP(v.plate)===normP(e.plate)) : null;
-    finLog.push({id:'mi'+i,date:e.date||e.month,plate:e.plate||'',model:vehicle?vehicle.model:'',desc:(e.category||'Money In')+(e.notes?' · '+e.notes:''),cat:'Money In',amount:-(e.amount||0),direction:'in'});
+    finLog.push({id:'mi'+i,date:e.date||e.month,plate:e.plate||'',model:vehicle?vehicle.make_model:'',desc:(e.category||'Money In')+(e.notes?' · '+e.notes:''),cat:'Money In',amount:-(e.amount||0),direction:'in'});
   });
   (APP_DATA.money_out||[]).forEach((e,i)=>{
     finLog.push({id:'mo'+i,date:e.date||e.month,plate:'',model:'',desc:(e.category||'Money Out')+(e.notes?' · '+e.notes:''),cat:'Money Out',amount:e.amount||0,direction:'out'});
@@ -1357,29 +1357,30 @@ document.querySelectorAll('.moverlay').forEach(o => o.addEventListener('click', 
 // ════════════════════════════════════════════
 function renderDashboard() {
   document.getElementById('dash-date').textContent = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  const lm = APP_DATA.monthly[APP_DATA.monthly.length-1];
+  const lm = APP_DATA.monthly.length ? APP_DATA.monthly[APP_DATA.monthly.length-1] : {gross_profit:0,cars_sold:0,label:'—',revenue:0,net_profit:0};
   const allP = APP_DATA.sold.reduce((a,v)=>a+v.profit,0);
   const longStock = stockData.filter(v=>v.days_in_stock>60).length;
   const finTotal = finLog.reduce((a,e)=>a+e.amount,0);
   const pendFines = fines.filter(f=>f.status!=='Paid').reduce((a,f)=>a+f.amount,0);
+  const soldCount = APP_DATA.sold.length;
   document.getElementById('dash-stats').innerHTML =
     '<div class="stat blue"><div class="sl">In Stock</div><div class="sv">'+stockData.length+'</div><div class="ss">'+stockData.filter(v=>v.status==='Live').length+' live</div><div class="si">🚗</div></div>'+
-    '<div class="stat green"><div class="sl">Mar \'26 Profit</div><div class="sv">'+fmt0(lm.gross_profit)+'</div><div class="ss">'+lm.cars_sold+' cars · record</div><div class="si">💰</div></div>'+
+    '<div class="stat green"><div class="sl">Latest Profit</div><div class="sv">'+fmt0(lm.gross_profit)+'</div><div class="ss">'+lm.cars_sold+' cars</div><div class="si">💰</div></div>'+
     '<div class="stat amber"><div class="sl">60+ Days</div><div class="sv">'+longStock+'</div><div class="ss">Need price review</div><div class="si">⚠️</div></div>'+
-    '<div class="stat purple"><div class="sl">All-Time Profit</div><div class="sv">'+fmt0(allP)+'</div><div class="ss">95 cars sold</div><div class="si">📈</div></div>'+
+    '<div class="stat purple"><div class="sl">All-Time Profit</div><div class="sv">'+fmt0(allP)+'</div><div class="ss">'+soldCount+' cars sold</div><div class="si">📈</div></div>'+
     '<div class="stat red"><div class="sl">Unpaid Fines</div><div class="sv">'+fmt0(pendFines)+'</div><div class="ss">'+fines.filter(f=>f.status!=='Paid').length+' outstanding</div><div class="si">⚠️</div></div>';
   let alerts = '';
   if(longStock>0) alerts += '<div class="alert alt-r">⚠️ <strong>'+longStock+' vehicles</strong> over 60 days — pricing review needed.</div>';
   if(pendFines>0) alerts += '<div class="alert alt-a">⚠️ <strong>'+fmt0(pendFines)+'</strong> in unpaid fines outstanding.</div>';
   alerts += '<div class="alert alt-b">✨ v3 is live — check all new sections in the sidebar.</div>';
   document.getElementById('dash-alerts').innerHTML = alerts;
-  const maxP = Math.max.apply(null, APP_DATA.monthly.map(m=>m.gross_profit));
-  document.getElementById('profit-chart').innerHTML = APP_DATA.monthly.map(m=>'<div class="bc2"><div class="bar" style="height:'+Math.max(3,(m.gross_profit/maxP)*100)+'px;background:'+(m.gross_profit<0?'var(--red)':m.gross_profit>20000?'var(--green)':'var(--blue)')+'"></div><div class="blbl">'+m.label+'</div></div>').join('');
+  const maxP = APP_DATA.monthly.length ? Math.max.apply(null, APP_DATA.monthly.map(m=>m.gross_profit)) : 1;
+  document.getElementById('profit-chart').innerHTML = APP_DATA.monthly.length ? APP_DATA.monthly.map(m=>'<div class="bc2"><div class="bar" style="height:'+Math.max(3,(m.gross_profit/maxP)*100)+'px;background:'+(m.gross_profit<0?'var(--red)':m.gross_profit>20000?'var(--green)':'var(--blue)')+'"></div><div class="blbl">'+m.label+'</div></div>').join('') : '<div style="padding:20px;text-align:center;color:var(--text3)">No sales data yet</div>';
   const ss = stockData.slice().sort((a,b)=>b.days_in_stock-a.days_in_stock);
-  document.getElementById('days-list').innerHTML = ss.map(v=>'<div class="li"><div class="ldot" style="background:'+(v.days_in_stock>90?'var(--red)':v.days_in_stock>45?'var(--amber)':'var(--green)')+'"></div><div class="lc"><div class="lt">'+v.model+'</div><div class="lm mono">'+v.plate+'</div></div><span class="'+dc(v.days_in_stock)+'">'+v.days_in_stock+'d</span></div>').join('');
+  document.getElementById('days-list').innerHTML = ss.map(v=>'<div class="li"><div class="ldot" style="background:'+(v.days_in_stock>90?'var(--red)':v.days_in_stock>45?'var(--amber)':'var(--green)')+'"></div><div class="lc"><div class="lt">'+v.make_model+'</div><div class="lm mono">'+v.plate+'</div></div><span class="'+dc(v.days_in_stock)+'">'+v.days_in_stock+'d</span></div>').join('');
   const top = APP_DATA.sold.filter(v=>v.profit>0).sort((a,b)=>b.profit-a.profit).slice(0,7);
   const mp = top[0]?top[0].profit:1;
-  document.getElementById('top-profit').innerHTML = top.map(v=>'<div class="pbar"><div style="flex:1"><div style="font-size:12px;font-weight:600">'+v.model+'</div><div style="font-size:10px;color:var(--text3)">'+v.plate+'</div></div><div class="ptrack"><div class="pfill" style="width:'+(v.profit/mp*100)+'%;background:var(--green)"></div></div><div style="font-family:\'DM Mono\',monospace;font-size:11.5px;font-weight:700;color:var(--green);min-width:58px;text-align:right">'+fmt0(v.profit)+'</div></div>').join('');
+  document.getElementById('top-profit').innerHTML = top.map(v=>'<div class="pbar"><div style="flex:1"><div style="font-size:12px;font-weight:600">'+v.make_model+'</div><div style="font-size:10px;color:var(--text3)">'+v.plate+'</div></div><div class="ptrack"><div class="pfill" style="width:'+(v.profit/mp*100)+'%;background:var(--green)"></div></div><div style="font-family:\'DM Mono\',monospace;font-size:11.5px;font-weight:700;color:var(--green);min-width:58px;text-align:right">'+fmt0(v.profit)+'</div></div>').join('');
   // Media widgets
   const atLive = atListings.filter(l=>l.status==='live').length;
   const atDraft = atListings.filter(l=>l.status==='draft'||l.status==='needs_review').length;
@@ -1407,7 +1408,7 @@ function renderStock() {
   document.getElementById('nb-stock').textContent = stockData.length;
   document.getElementById('stock-tbody').innerHTML = fl.map(v=>{
     const todo = (v.todo||[]).map(t=>'<span class="badge bk" style="margin:1px;">'+t+'</span>').join('') || '<span class="badge bg">Nothing left</span>';
-    return '<tr><td class="tdm">'+v.model+'<div style="font-size:10px;color:var(--text3);">'+fmtD(v.date_acquired)+'</div></td><td><span class="mono">'+v.plate+'</span></td><td>'+(v.source||'—')+'</td><td>'+v.investor+'</td><td style="font-weight:700">'+fmt0(v.total_cost)+'</td><td>'+v.days_in_stock+'d</td><td><span class="badge '+(v.website_listed?'bg':'bk')+'">'+(v.website_listed?'Listed':'Not live')+'</span></td><td><span class="badge '+(v.autotrader_listed?'bb':'bk')+'">'+(v.autotrader_listed?'Listed':'Not live')+'</span></td><td>'+todo+'<div style="font-size:10px;color:var(--text3);margin-top:4px;">'+escHtml(v.status||'')+'</div></td><td><div style="display:flex;gap:4px;flex-wrap:wrap;"><button class="btn btn-g btn-xs" onclick="openMediaManager(\''+v.plate+'\')">📷</button><button class="btn btn-b btn-xs" onclick="nav(\'autotrader\',document.querySelector(\'[onclick*=autotrader]\'))">AT</button><button class="btn btn-g btn-xs" onclick="openStockBreakdown(\''+v.plate+'\')">View</button></div></td></tr>';
+    return '<tr><td class="tdm">'+v.make_model+'<div style="font-size:10px;color:var(--text3);">'+fmtD(v.date_acquired)+'</div></td><td><span class="mono">'+v.plate+'</span></td><td>'+(v.source||'—')+'</td><td>'+v.investor+'</td><td style="font-weight:700">'+fmt0(v.total_cost)+'</td><td>'+v.days_in_stock+'d</td><td><span class="badge '+(v.website_listed?'bg':'bk')+'">'+(v.website_listed?'Listed':'Not live')+'</span></td><td><span class="badge '+(v.autotrader_listed?'bb':'bk')+'">'+(v.autotrader_listed?'Listed':'Not live')+'</span></td><td>'+todo+'<div style="font-size:10px;color:var(--text3);margin-top:4px;">'+escHtml(v.status||'')+'</div></td><td><div style="display:flex;gap:4px;flex-wrap:wrap;"><button class="btn btn-g btn-xs" onclick="openMediaManager(\''+v.plate+'\')">📷</button><button class="btn btn-b btn-xs" onclick="nav(\'autotrader\',document.querySelector(\'[onclick*=autotrader]\'))">AT</button><button class="btn btn-g btn-xs" onclick="openStockBreakdown(\''+v.plate+'\')">View</button></div></td></tr>';
   }).join('');
 }
 
@@ -1417,7 +1418,7 @@ function renderStock() {
 function renderSold() {
   const f=document.getElementById('sold-filter').value;
   const arr=(f?APP_DATA.sold.filter(v=>v.month===f):APP_DATA.sold).slice().sort((a,b)=>(b.date_sold||'').localeCompare(a.date_sold||''));
-  document.getElementById('sold-tbody').innerHTML=arr.map((v,i)=>'<tr><td>'+mLabel(v.month)+'</td><td class="tdm">'+v.model+'</td><td><span class="mono">'+v.plate+'</span></td><td>'+fmtD(v.date_acquired)+'</td><td>'+(v.date_sold?fmtD(v.date_sold):'—')+'</td><td>'+(v.source||'—')+'</td><td>'+v.days_in_stock+'d</td><td>'+fmt0(v.total_cost)+'</td><td>'+fmt0(v.sold_price)+'</td><td style="color:'+(v.profit>=0?'var(--green)':'var(--red)')+';font-weight:700">'+fmt(v.profit)+'</td><td>'+(v.investor||'SA')+'</td><td><button class="btn btn-g btn-xs" onclick="showSoldBreakdown('+i+')">Full</button></td></tr>').join('');
+  document.getElementById('sold-tbody').innerHTML=arr.map((v,i)=>'<tr><td>'+mLabel(v.month)+'</td><td class="tdm">'+v.make_model+'</td><td><span class="mono">'+v.plate+'</span></td><td>'+fmtD(v.date_acquired)+'</td><td>'+(v.date_sold?fmtD(v.date_sold):'—')+'</td><td>'+(v.source||'—')+'</td><td>'+v.days_in_stock+'d</td><td>'+fmt0(v.total_cost)+'</td><td>'+fmt0(v.sold_price)+'</td><td style="color:'+(v.profit>=0?'var(--green)':'var(--red)')+';font-weight:700">'+fmt(v.profit)+'</td><td>'+(v.investor||'SA')+'</td><td><button class="btn btn-g btn-xs" onclick="showSoldBreakdown('+i+')">Full</button></td></tr>').join('');
 }
 
 // ════════════════════════════════════════════
@@ -1427,16 +1428,16 @@ function renderCollections() {
   const incoming = collections.slice().sort((a,b)=>b.days_pending-a.days_pending);
   const outgoing = deliveries.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   document.getElementById('col-stats').innerHTML='<div class="stat blue"><div class="sl">Incoming Cars</div><div class="sv">'+incoming.length+'</div></div><div class="stat amber"><div class="sl">Pending</div><div class="sv">'+incoming.filter(c=>c.status!=='Collected').length+'</div></div><div class="stat green"><div class="sl">Deliveries</div><div class="sv">'+outgoing.length+'</div></div><div class="stat purple"><div class="sl">Grouped Runs</div><div class="sv">'+incoming.filter(c=>(c.linked_vehicles||[]).length).length+'</div></div>';
-  document.getElementById('collections-list').innerHTML=incoming.length?incoming.map(c=>'<div class="li"><div class="ldot" style="background:var(--amber)"></div><div class="lc"><div class="lt">'+c.plate+' — '+c.model+'</div><div class="lm">'+(c.addr||'Address needed')+' · Won '+fmtD(c.date_won)+'</div><div class="lv">Pending '+(c.days_pending||0)+' days · '+(c.distance_note||'Distance to be checked')+'</div></div><span class="badge ba">'+c.status+'</span></div>').join(''):'<div style="color:var(--text3);font-size:12px;padding:10px;">No inbound cars</div>';
-  document.getElementById('deliveries-list').innerHTML=outgoing.length?outgoing.map(c=>'<div class="li"><div class="ldot" style="background:var(--blue)"></div><div class="lc"><div class="lt">'+c.plate+' — '+c.model+'</div><div class="lm">'+(c.addr||'Address needed')+' · '+fmtD(c.date)+'</div><div class="lv">Driver: '+(c.driver||'TBC')+'</div></div><span class="badge bb">'+c.status+'</span></div>').join(''):'<div style="color:var(--text3);font-size:12px;padding:10px;">No deliveries logged</div>';
+  document.getElementById('collections-list').innerHTML=incoming.length?incoming.map(c=>'<div class="li"><div class="ldot" style="background:var(--amber)"></div><div class="lc"><div class="lt">'+c.plate+' — '+c.make_model+'</div><div class="lm">'+(c.addr||'Address needed')+' · Won '+fmtD(c.date_won)+'</div><div class="lv">Pending '+(c.days_pending||0)+' days · '+(c.distance_note||'Distance to be checked')+'</div></div><span class="badge ba">'+c.status+'</span></div>').join(''):'<div style="color:var(--text3);font-size:12px;padding:10px;">No inbound cars</div>';
+  document.getElementById('deliveries-list').innerHTML=outgoing.length?outgoing.map(c=>'<div class="li"><div class="ldot" style="background:var(--blue)"></div><div class="lc"><div class="lt">'+c.plate+' — '+c.make_model+'</div><div class="lm">'+(c.addr||'Address needed')+' · '+fmtD(c.date)+'</div><div class="lv">Driver: '+(c.driver||'TBC')+'</div></div><span class="badge bb">'+c.status+'</span></div>').join(''):'<div style="color:var(--text3);font-size:12px;padding:10px;">No deliveries logged</div>';
   const all = incoming.concat(outgoing);
-  document.getElementById('col-tbody').innerHTML=all.map(c=>'<tr><td><span class="badge '+(c.type==='Incoming'?'ba':'bb')+'">'+c.type+'</span></td><td class="tdm">'+c.model+'</td><td><span class="mono">'+c.plate+'</span></td><td>'+(c.type==='Incoming'?fmtD(c.date_won):fmtD(c.date||c.scheduled_date))+'</td><td>'+(c.addr||'—')+'</td><td>'+(c.driver||'—')+'</td><td>'+(c.cost?fmt0(c.cost):'—')+'</td><td>'+(c.status||'Pending')+'<div style="font-size:10px;color:var(--text3);">'+(c.linked_vehicles&&c.linked_vehicles.length?'Linked: '+c.linked_vehicles.join(', '):'')+'</div></td></tr>').join('');
+  document.getElementById('col-tbody').innerHTML=all.map(c=>'<tr><td><span class="badge '+(c.type==='Incoming'?'ba':'bb')+'">'+c.type+'</span></td><td class="tdm">'+c.make_model+'</td><td><span class="mono">'+c.plate+'</span></td><td>'+(c.type==='Incoming'?fmtD(c.date_won):fmtD(c.date||c.scheduled_date))+'</td><td>'+(c.addr||'—')+'</td><td>'+(c.driver||'—')+'</td><td>'+(c.cost?fmt0(c.cost):'—')+'</td><td>'+(c.status||'Pending')+'<div style="font-size:10px;color:var(--text3);">'+(c.linked_vehicles&&c.linked_vehicles.length?'Linked: '+c.linked_vehicles.join(', '):'')+'</div></td></tr>').join('');
 }
 async function addCollection(){
   const plate=document.getElementById('col-plate').value.trim().toUpperCase();
   try {
     await api('POST', '/collections', {
-      plate, make_model: (findV(plate)||{}).model||'',
+      plate, make_model: (findV(plate)||{}).make_model||'',
       source: '', date_won: document.getElementById('col-won').value||today(),
       collection_date: document.getElementById('col-date').value||'',
       address: document.getElementById('col-addr').value,
@@ -1458,7 +1459,7 @@ function renderServiceHistory() {
 function addService() {
   const plate=document.getElementById('svc-plate').value.trim().toUpperCase();
   const v=findV(plate);
-  serviceRecords.unshift({plate,model:v?v.model:'',type:document.getElementById('svc-type').value,date:document.getElementById('svc-date').value,miles:parseInt(document.getElementById('svc-miles').value)||0,stamps:parseInt(document.getElementById('svc-stamps').value)||0,notes:document.getElementById('svc-notes').value,photo:null,ref:'SVC-'+Date.now().toString().slice(-6)});
+  serviceRecords.unshift({plate,model:v?v.make_model:'',type:document.getElementById('svc-type').value,date:document.getElementById('svc-date').value,miles:parseInt(document.getElementById('svc-miles').value)||0,stamps:parseInt(document.getElementById('svc-stamps').value)||0,notes:document.getElementById('svc-notes').value,photo:null,ref:'SVC-'+Date.now().toString().slice(-6)});
   localStorage.setItem('dealeros_service_records', JSON.stringify(serviceRecords));
   closeM('addservice');renderServiceHistory();
 }
@@ -1486,7 +1487,7 @@ function renderMOT() {
     const pct = v.daysLeft ? Math.min(100,Math.max(0,(v.daysLeft/365)*100)) : 35;
     const col = v.daysLeft !== null ? (v.daysLeft < 0 ? 'var(--red)' : v.daysLeft < 183 ? 'var(--amber)' : 'var(--green)') : 'var(--text3)';
     const label = v.daysLeft !== null ? (v.daysLeft<0?'Expired':v.daysLeft+' days') : 'Check needed';
-    return '<div class="mot-card"><div class="mot-plate">'+(v.plate||'—')+'</div><div class="mot-model">'+(v.model||'Unknown')+'</div><div class="mot-expiry" style="color:'+col+'">'+label+'</div><div style="font-size:10px;color:var(--text3);margin-top:2px;">'+(v.mot_expiry?fmtD(v.mot_expiry):'No MOT date stored')+'</div><div class="mot-bar"><div style="height:100%;width:'+pct+'%;background:'+col+';border-radius:3px;"></div></div><div style="margin-top:8px;display:flex;gap:5px;flex-wrap:wrap;"><button class="btn btn-g btn-xs" onclick="checkDVSA(\''+(v.plate||'')+'\')">DVSA</button>'+(v.needs_mot?'<span class="badge ba">Needs MOT</span>':'')+'</div></div>';
+    return '<div class="mot-card"><div class="mot-plate">'+(v.plate||'—')+'</div><div class="mot-model">'+(v.make_model||'Unknown')+'</div><div class="mot-expiry" style="color:'+col+'">'+label+'</div><div style="font-size:10px;color:var(--text3);margin-top:2px;">'+(v.mot_expiry?fmtD(v.mot_expiry):'No MOT date stored')+'</div><div class="mot-bar"><div style="height:100%;width:'+pct+'%;background:'+col+';border-radius:3px;"></div></div><div style="margin-top:8px;display:flex;gap:5px;flex-wrap:wrap;"><button class="btn btn-g btn-xs" onclick="checkDVSA(\''+(v.plate||'')+'\')">DVSA</button>'+(v.needs_mot?'<span class="badge ba">Needs MOT</span>':'')+'</div></div>';
   }).join('');
 }
 function checkDVSA(plate) { window.open('https://www.gov.uk/check-mot-history?registration='+encodeURIComponent(plate),'_blank'); }
@@ -1498,7 +1499,7 @@ function checkAllMOT() { window.open('https://www.gov.uk/check-mot-history','_bl
 function renderInsurance() {
   const f = document.getElementById('ins-filter') ? document.getElementById('ins-filter').value : 'current';
   let base = f==='sold' ? APP_DATA.sold.slice(0,20) : f==='inbound' ? collections : f==='all' ? stockData.concat(collections).concat(APP_DATA.sold.slice(0,20)) : stockData;
-  document.getElementById('ins-tbody').innerHTML = base.map(v=>'<tr><td class="tdm">'+(v.model||'Unknown')+'</td><td><span class="mono">'+(v.plate||'—')+'</span></td><td style="color:var(--text3)">'+(v.last_ins_check?fmtD(v.last_ins_check):'Not checked')+'</td><td><span class="badge bk">Manual check</span></td><td>'+(v.notes||'—')+'</td><td><button class="btn btn-b btn-xs" onclick="checkIns(\''+(v.plate||'')+'\')">Check</button></td></tr>').join('');
+  document.getElementById('ins-tbody').innerHTML = base.map(v=>'<tr><td class="tdm">'+(v.make_model||'Unknown')+'</td><td><span class="mono">'+(v.plate||'—')+'</span></td><td style="color:var(--text3)">'+(v.last_ins_check?fmtD(v.last_ins_check):'Not checked')+'</td><td><span class="badge bk">Manual check</span></td><td>'+(v.notes||'—')+'</td><td><button class="btn btn-b btn-xs" onclick="checkIns(\''+(v.plate||'')+'\')">Check</button></td></tr>').join('');
 }
 function checkInsurance() {
   const plate = document.getElementById('ins-plate').value.trim().toUpperCase();
@@ -1683,9 +1684,9 @@ function processReceipt() {
   setTimeout(()=>{
     const extractedAmount = amount || (Math.round((15+Math.random()*80)*100)/100);
     const v=findV(plate);
-    const receipt={id:'r'+Date.now(),plate,model:v?v.model:'',cat,notes:notes||cat,amount:extractedAmount,date:today(),img:receiptFile?URL.createObjectURL(receiptFile):null};
+    const receipt={id:'r'+Date.now(),plate,model:v?v.make_model:'',cat,notes:notes||cat,amount:extractedAmount,date:today(),img:receiptFile?URL.createObjectURL(receiptFile):null};
     receipts.unshift(receipt);
-    finLog.unshift({id:'e'+Date.now(),date:today(),plate,model:v?v.model:'',desc:(notes||cat)+' (receipt)',cat,amount:extractedAmount});
+    finLog.unshift({id:'e'+Date.now(),date:today(),plate,model:v?v.make_model:'',desc:(notes||cat)+' (receipt)',cat,amount:extractedAmount});
     if(v&&stockData.includes(v)){v.recon_cost=(v.recon_cost||0)+extractedAmount;v.total_cost=(v.total_cost||0)+extractedAmount;}
     btn.innerHTML='✨ Process Receipt';
     document.getElementById('r-plate').value='';document.getElementById('r-notes').value='';document.getElementById('r-amount').value='';
@@ -1702,8 +1703,8 @@ function saveModalReceipt() {
   const notes=document.getElementById('mr-notes').value;
   if(!amount){alert('Please enter an amount.');return;}
   const v=findV(plate);
-  receipts.unshift({id:'r'+Date.now(),plate,model:v?v.model:'',cat,notes:notes||cat,amount,date:today(),img:modalReceiptFile?URL.createObjectURL(modalReceiptFile):null});
-  finLog.unshift({id:'e'+Date.now(),date:today(),plate,model:v?v.model:'',desc:(notes||cat)+' (receipt)',cat,amount});
+  receipts.unshift({id:'r'+Date.now(),plate,model:v?v.make_model:'',cat,notes:notes||cat,amount,date:today(),img:modalReceiptFile?URL.createObjectURL(modalReceiptFile):null});
+  finLog.unshift({id:'e'+Date.now(),date:today(),plate,model:v?v.make_model:'',desc:(notes||cat)+' (receipt)',cat,amount});
   if(v&&stockData.includes(v)){v.recon_cost=(v.recon_cost||0)+amount;v.total_cost=(v.total_cost||0)+amount;}
   closeM('addreceipt');renderReceipts();modalReceiptFile=null;
   ['mr-plate','mr-amount','mr-notes'].forEach(id=>document.getElementById(id).value='');
@@ -1738,8 +1739,8 @@ function renderBanking() {
   const rows = filter && grouped[filter] ? grouped[filter] : collections;
   document.getElementById('bank-stats').innerHTML = '<div class="stat blue"><div class="sl">Incoming</div><div class="sv">'+collections.length+'</div></div><div class="stat amber"><div class="sl">Pending Days</div><div class="sv">'+collections.reduce((a,c)=>a+Number(c.days_pending||0),0)+'</div></div><div class="stat green"><div class="sl">Regions</div><div class="sv">'+Object.keys(grouped).length+'</div></div><div class="stat purple"><div class="sl">Linked Runs</div><div class="sv">'+collections.filter(c=>(c.linked_vehicles||[]).length).length+'</div></div>';
   document.getElementById('bank-accounts').innerHTML = Object.keys(grouped).map(k=>'<div class="li"><div class="ldot" style="background:var(--blue)"></div><div class="lc"><div class="lt">'+k+'</div><div class="lm">'+grouped[k].length+' car(s)</div></div><span class="badge bb">'+(k==='Scotland'?'Use Edinburgh or Glasgow':'Check route')+'</span></div>').join('');
-  document.getElementById('recon-status').innerHTML = collections.length ? collections.map(c=>'<div class="li"><div class="ldot" style="background:var(--amber)"></div><div class="lc"><div class="lt">'+c.plate+' · '+c.model+'</div><div class="lm">'+(c.addr||'Address needed')+' · Pending '+(c.days_pending||0)+' days</div></div><span class="badge ba">'+(c.distance_note||'Map it')+'</span></div>').join('') : '<div style="color:var(--text3);font-size:12px;">No inbound cars.</div>';
-  document.getElementById('bank-txs').innerHTML = rows.length ? rows.map(c=>'<div class="bank-tx"><div class="bank-icon" style="background:rgba(59,130,246,.12);">📍</div><div class="bank-desc"><strong>'+c.plate+'</strong> · '+c.model+'<div class="bank-date">'+(c.addr||'Address needed')+' · Won '+fmtD(c.date_won)+'</div></div><div class="bank-amt">'+(c.scheduled_date?fmtD(c.scheduled_date):'TBC')+'</div></div>').join('') : '<div style="padding:12px;color:var(--text3);">No rows for this route filter.</div>';
+  document.getElementById('recon-status').innerHTML = collections.length ? collections.map(c=>'<div class="li"><div class="ldot" style="background:var(--amber)"></div><div class="lc"><div class="lt">'+c.plate+' · '+c.make_model+'</div><div class="lm">'+(c.addr||'Address needed')+' · Pending '+(c.days_pending||0)+' days</div></div><span class="badge ba">'+(c.distance_note||'Map it')+'</span></div>').join('') : '<div style="color:var(--text3);font-size:12px;">No inbound cars.</div>';
+  document.getElementById('bank-txs').innerHTML = rows.length ? rows.map(c=>'<div class="bank-tx"><div class="bank-icon" style="background:rgba(59,130,246,.12);">📍</div><div class="bank-desc"><strong>'+c.plate+'</strong> · '+c.make_model+'<div class="bank-date">'+(c.addr||'Address needed')+' · Won '+fmtD(c.date_won)+'</div></div><div class="bank-amt">'+(c.scheduled_date?fmtD(c.scheduled_date):'TBC')+'</div></div>').join('') : '<div style="padding:12px;color:var(--text3);">No rows for this route filter.</div>';
   document.getElementById('investor-payouts').innerHTML = '<div class="li"><div class="ldot" style="background:var(--green)"></div><div class="lc"><div class="lt">Google Maps autocomplete ready</div><div class="lm">Add your Maps key in the config and bind #col-addr to Places autocomplete.</div></div></div><div class="li"><div class="ldot" style="background:var(--purple)"></div><div class="lc"><div class="lt">Airport shortcut idea</div><div class="lm">Use this screen to compare Scotland pickups and group cars that can be collected in one run.</div></div></div>';
 }
 function allocateTx(id){const t=bankTxs.find(t=>t.id===id);if(t){t.matched=true;renderBanking();}}
@@ -1757,7 +1758,7 @@ function renderInvestors() {
   const maxP=Math.max.apply(null,APP_DATA.investors.map(i=>i.total_profit).concat([1]));
   document.getElementById('inv-chart').innerHTML=APP_DATA.investors.map(inv=>'<div class="bc2"><div class="bar" style="height:'+Math.max(3,(inv.total_profit/maxP)*100)+'px;background:var(--blue)"></div><div class="blbl">'+inv.name+'<br>'+fmt0(inv.total_profit)+'</div></div>').join('');
   const assigned = stockData.concat(APP_DATA.sold).filter(v=>v.investor && v.investor!=='SA');
-  document.getElementById('inv-vehicle-tbody').innerHTML = assigned.map(v=>'<tr><td>'+v.investor+'</td><td class="tdm">'+v.model+'</td><td><span class="mono">'+v.plate+'</span></td><td>'+fmt0(v.total_cost||0)+'</td><td>'+fmt0(v.sold_price||0)+'</td><td style="color:'+(Number(v.profit||0)>=0?'var(--green)':'var(--red)')+'">'+fmt(Number(v.profit||0))+'</td><td>'+fmt0(Number(v.investor_profit||0))+'</td><td>'+((v.status)||'Current')+'</td></tr>').join('');
+  document.getElementById('inv-vehicle-tbody').innerHTML = assigned.map(v=>'<tr><td>'+v.investor+'</td><td class="tdm">'+v.make_model+'</td><td><span class="mono">'+v.plate+'</span></td><td>'+fmt0(v.total_cost||0)+'</td><td>'+fmt0(v.sold_price||0)+'</td><td style="color:'+(Number(v.profit||0)>=0?'var(--green)':'var(--red)')+'">'+fmt(Number(v.profit||0))+'</td><td>'+fmt0(Number(v.investor_profit||0))+'</td><td>'+((v.status)||'Current')+'</td></tr>').join('');
 }
 
 // ════════════════════════════════════════════
@@ -1795,7 +1796,7 @@ function renderVAT() {
     '<div class="stat amber"><div class="sl">Net VAT Owed</div><div class="sv">'+fmt0(netVAT)+'</div><div class="ss">HMRC estimate</div></div>'+
     '<div class="stat blue"><div class="sl">Current Quarter</div><div class="sv">Q'+Math.ceil((new Date().getMonth()+1)/3)+'</div><div class="ss">'+new Date().getFullYear()+'</div></div>'+
     '<div class="stat bk" style="background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:13px 15px;"><div class="sl">Note</div><div style="font-size:11px;color:var(--text3);margin-top:4px;line-height:1.5;">Used car dealers typically use the VAT Margin Scheme. Always verify figures with your accountant before HMRC submission.</div></div>';
-  document.getElementById('vat-output').innerHTML=sales.slice(0,10).map(v=>'<div class="irow" style="padding:6px 0;border-bottom:1px solid var(--border);"><span class="lbl">'+v.model+' · '+v.plate+'</span><span class="val" style="color:var(--amber)">'+fmt(v.sold_price/6)+'</span></div>').join('');
+  document.getElementById('vat-output').innerHTML=sales.slice(0,10).map(v=>'<div class="irow" style="padding:6px 0;border-bottom:1px solid var(--border);"><span class="lbl">'+v.make_model+' · '+v.plate+'</span><span class="val" style="color:var(--amber)">'+fmt(v.sold_price/6)+'</span></div>').join('');
   document.getElementById('vat-input').innerHTML=finLog.slice(0,10).map(e=>'<div class="irow" style="padding:6px 0;border-bottom:1px solid var(--border);"><span class="lbl">'+(e.plate?e.plate+' · ':'')+e.desc+'</span><span class="val" style="color:var(--green)">'+fmt(e.amount*VAT_RATE/1.2)+'</span></div>').join('');
   document.getElementById('vat-quarter').innerHTML='<div style="background:var(--s2);border:1px solid var(--border);border-radius:var(--rs);padding:14px;"><div style="font-size:13px;font-weight:700;margin-bottom:10px;">Q'+Math.ceil((new Date().getMonth()+1)/3)+' '+new Date().getFullYear()+' Estimate</div><div class="irow" style="padding:6px 0;"><span class="lbl">Output Tax (VAT on sales)</span><span class="val">'+fmt(outputVAT)+'</span></div><div class="irow" style="padding:6px 0;"><span class="lbl">Input Tax (VAT on costs)</span><span class="val" style="color:var(--green)">'+fmt(inputVAT)+'</span></div><div style="height:1px;background:var(--border);margin:8px 0;"></div><div class="irow" style="padding:6px 0;"><span style="font-weight:800;font-size:13px;">Net VAT due to HMRC</span><span style="font-weight:800;font-size:15px;color:var(--amber);font-family:\'DM Mono\',monospace;">'+fmt(netVAT)+'</span></div></div>';
 }
@@ -1809,7 +1810,7 @@ function searchReg(val) {
   const v=findV(val);
   if(!v){document.getElementById('reg-result').style.display='none';document.getElementById('sell-form').style.display='none';document.getElementById('invoice-output').style.display='none';return;}
   currentVehicle=v;
-  document.getElementById('rr-model').textContent=v.model;
+  document.getElementById('rr-model').textContent=v.make_model;
   document.getElementById('rr-plate').textContent=v.plate;
   document.getElementById('rr-cost').textContent=fmt0(v.total_cost||0);
   document.getElementById('rr-investor').textContent=v.investor||'SA';
@@ -1857,11 +1858,11 @@ function generateInvoice() {
   let costRows='<tr><td>Car Price</td><td style="text-align:right">'+fmt(v.purchase_price||cost)+'</td></tr>';
   if(vCosts.length>0){vCosts.forEach(e=>{costRows+='<tr><td>'+e.desc+'</td><td style="text-align:right">'+fmt(e.amount)+'</td></tr>';});}
   else if(v.recon_cost>0){costRows+='<tr><td>Reconditioning &amp; Fees</td><td style="text-align:right">'+fmt(v.recon_cost)+'</td></tr>';}
-  const html='<div class="inv-wrap" id="print-inv"><div class="inv-top"><div><img src="'+LOGO+'" class="inv-logo-img" alt="SA Motors (TRIAL TASK)"><div class="inv-addr-text">Company Registration Number 15699982<br>Suite RA01<br>64 Nile Street<br>N1 7SR<br>London, United Kingdom<br>07440 603950</div></div><div><div class="inv-big-title">INVOICE</div><div class="inv-meta-block"><strong>DATE:</strong>&nbsp;&nbsp;&nbsp;&nbsp;'+fmtDL(saleDate)+'<br><strong>INVOICE #</strong>&nbsp;&nbsp;'+invNum+'<br><strong>FOR:</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+v.model+' - '+v.plate+'</div></div></div><table class="inv-table"><thead><tr><th>VEHICLE COST BREAKDOWN</th><th style="text-align:right">AMOUNT</th></tr></thead><tbody>'+costRows+'<tr class="row-total"><td><strong>TOTAL EXPENSES</strong></td><td style="text-align:right"><strong>'+fmt(cost)+'</strong></td></tr></tbody></table><table class="inv-table"><thead><tr><th>SALE</th><th style="text-align:right">AMOUNT</th></tr></thead><tbody><tr><td>Purchase Price (Total Cost In)</td><td style="text-align:right">'+fmt(cost)+'</td></tr><tr><td>Sale Price</td><td style="text-align:right">'+fmt(sale)+'</td></tr><tr class="row-profit"><td><strong>TOTAL PROFIT</strong></td><td style="text-align:right"><strong>'+fmt(profit)+'</strong></td></tr><tr class="row-investor"><td><strong>INVESTOR '+pct+'% PROFIT ('+investor+')</strong></td><td style="text-align:right"><strong>'+fmt(invP)+'</strong></td></tr></tbody></table><div class="inv-footer">All profits have been sent to the investor\'s bank account and the remaining capital has been added to their investing balance<br>If you have any questions concerning this invoice, Contact SA Motors (TRIAL TASK), 07440 603950, Admin@MPMotorsLondon.co.uk<br><br><strong>THANK YOU FOR YOUR BUSINESS!</strong></div></div>';
+  const html='<div class="inv-wrap" id="print-inv"><div class="inv-top"><div><img src="'+LOGO+'" class="inv-logo-img" alt="SA Motors (TRIAL TASK)"><div class="inv-addr-text">Company Registration Number 15699982<br>Suite RA01<br>64 Nile Street<br>N1 7SR<br>London, United Kingdom<br>07440 603950</div></div><div><div class="inv-big-title">INVOICE</div><div class="inv-meta-block"><strong>DATE:</strong>&nbsp;&nbsp;&nbsp;&nbsp;'+fmtDL(saleDate)+'<br><strong>INVOICE #</strong>&nbsp;&nbsp;'+invNum+'<br><strong>FOR:</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+v.make_model+' - '+v.plate+'</div></div></div><table class="inv-table"><thead><tr><th>VEHICLE COST BREAKDOWN</th><th style="text-align:right">AMOUNT</th></tr></thead><tbody>'+costRows+'<tr class="row-total"><td><strong>TOTAL EXPENSES</strong></td><td style="text-align:right"><strong>'+fmt(cost)+'</strong></td></tr></tbody></table><table class="inv-table"><thead><tr><th>SALE</th><th style="text-align:right">AMOUNT</th></tr></thead><tbody><tr><td>Purchase Price (Total Cost In)</td><td style="text-align:right">'+fmt(cost)+'</td></tr><tr><td>Sale Price</td><td style="text-align:right">'+fmt(sale)+'</td></tr><tr class="row-profit"><td><strong>TOTAL PROFIT</strong></td><td style="text-align:right"><strong>'+fmt(profit)+'</strong></td></tr><tr class="row-investor"><td><strong>INVESTOR '+pct+'% PROFIT ('+investor+')</strong></td><td style="text-align:right"><strong>'+fmt(invP)+'</strong></td></tr></tbody></table><div class="inv-footer">All profits have been sent to the investor\'s bank account and the remaining capital has been added to their investing balance<br>If you have any questions concerning this invoice, Contact SA Motors (TRIAL TASK), 07440 603950, Admin@MPMotorsLondon.co.uk<br><br><strong>THANK YOU FOR YOUR BUSINESS!</strong></div></div>';
   document.getElementById('invoice-render').innerHTML=html;
   document.getElementById('invoice-output').style.display='block';
   document.getElementById('invoice-output').scrollIntoView({behavior:'smooth'});
-  savedInvoices.unshift({invNum,model:v.model,plate:v.plate,sale,cost,profit,invP,pct,investor,saleDate,html});
+  savedInvoices.unshift({invNum,make_model:v.make_model,plate:v.plate,sale,cost,profit,invP,pct,investor,saleDate,html});
 }
 function printInv(){
   const content=document.getElementById('invoice-render').innerHTML;
@@ -1870,7 +1871,7 @@ function printInv(){
   w.document.close();setTimeout(()=>w.print(),500);
 }
 function renderInvoiceList(){
-  document.getElementById('inv-list').innerHTML=savedInvoices.length?savedInvoices.map((inv,i)=>'<div class="li"><div class="lc"><div class="lt">'+inv.invNum+' · '+inv.model+'</div><div class="lm">'+inv.plate+' · '+fmtD(inv.saleDate)+' · Sale: '+fmt0(inv.sale)+'</div><div style="display:flex;gap:5px;margin-top:4px;"><span class="badge bg">Profit: '+fmt0(inv.profit)+'</span><span class="badge bp">'+inv.investor+': '+fmt0(inv.invP)+'</span></div></div><div style="display:flex;gap:4px;flex-direction:column;"><button class="btn btn-g btn-xs" onclick="reView('+i+')">View</button><button class="btn btn-p btn-xs" onclick="rePrint('+i+')">PDF</button></div></div>').join(''):'<div style="color:var(--text3);font-size:12.5px;text-align:center;padding:22px;">No invoices yet — use <strong>Sell a Car</strong> to generate one.</div>';
+  document.getElementById('inv-list').innerHTML=savedInvoices.length?savedInvoices.map((inv,i)=>'<div class="li"><div class="lc"><div class="lt">'+inv.invNum+' · '+inv.make_model+'</div><div class="lm">'+inv.plate+' · '+fmtD(inv.saleDate)+' · Sale: '+fmt0(inv.sale)+'</div><div style="display:flex;gap:5px;margin-top:4px;"><span class="badge bg">Profit: '+fmt0(inv.profit)+'</span><span class="badge bp">'+inv.investor+': '+fmt0(inv.invP)+'</span></div></div><div style="display:flex;gap:4px;flex-direction:column;"><button class="btn btn-g btn-xs" onclick="reView('+i+')">View</button><button class="btn btn-p btn-xs" onclick="rePrint('+i+')">PDF</button></div></div>').join(''):'<div style="color:var(--text3);font-size:12.5px;text-align:center;padding:22px;">No invoices yet — use <strong>Sell a Car</strong> to generate one.</div>';
 }
 function reView(i){nav('sellcar',document.querySelector('[onclick*=sellcar]'));setTimeout(()=>{document.getElementById('invoice-render').innerHTML=savedInvoices[i].html;document.getElementById('invoice-output').style.display='block';document.getElementById('invoice-output').scrollIntoView({behavior:'smooth'});},120);}
 function rePrint(i){const w=window.open('','_blank');w.document.write('<!DOCTYPE html><html><head><title>SA Motors (TRIAL TASK) Invoice</title><style>body{font-family:Arial,sans-serif;margin:20px;}.inv-wrap{max-width:800px;margin:0 auto;font-size:12px;color:#111;line-height:1.5;}.inv-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;}.inv-logo-img{height:62px;object-fit:contain;}.inv-big-title{font-size:38px;font-weight:200;color:#333;letter-spacing:3px;margin-bottom:6px;}.inv-addr-text{font-size:10.5px;color:#444;line-height:1.8;margin-top:6px;}.inv-meta-block{text-align:right;font-size:11.5px;line-height:2;}.inv-table{width:100%;border-collapse:collapse;margin-bottom:13px;}th{background:#f0f0f0;padding:8px 11px;font-size:10.5px;font-weight:700;text-transform:uppercase;border:1px solid #ccc;text-align:left;}td{padding:7px 11px;border:1px solid #ddd;font-size:11.5px;}.row-total td{background:#e8e8e8;font-weight:800;}.row-profit td{background:#111;color:#fff;font-weight:800;font-size:13px;}.row-investor td{background:#1a3a1a;color:#4ade80;font-weight:800;}.inv-footer{text-align:center;font-size:10px;color:#888;margin-top:14px;border-top:1px solid #ddd;padding-top:11px;line-height:1.8;}@media print{body{margin:0;}}</style></head><body>'+savedInvoices[i].html+'</body></html>');w.document.close();setTimeout(()=>w.print(),500);}
@@ -1880,9 +1881,9 @@ function rePrint(i){const w=window.open('','_blank');w.document.write('<!DOCTYPE
 // ════════════════════════════════════════════
 function renderTasks(){
   const nl=stockData.filter(v=>v.notes&&v.notes.toLowerCase().indexOf('not listed')>=0&&v.days_in_stock>5);
-  document.getElementById('tasks-nl').innerHTML=nl.length?nl.map(v=>'<div class="li"><div class="ldot" style="background:var(--amber)"></div><div class="lc"><div class="lt">List — '+v.model+'</div><div class="lm">'+v.notes+'</div><div class="lv">🚗 '+v.plate+' · '+v.days_in_stock+'d</div></div><span class="badge '+(v.days_in_stock>30?'br':'ba')+'">'+(v.days_in_stock>30?'Urgent':'Pending')+'</span></div>').join(''):'<div style="color:var(--text3);font-size:12px;padding:10px;">All good</div>';
+  document.getElementById('tasks-nl').innerHTML=nl.length?nl.map(v=>'<div class="li"><div class="ldot" style="background:var(--amber)"></div><div class="lc"><div class="lt">List — '+v.make_model+'</div><div class="lm">'+v.notes+'</div><div class="lv">🚗 '+v.plate+' · '+v.days_in_stock+'d</div></div><span class="badge '+(v.days_in_stock>30?'br':'ba')+'">'+(v.days_in_stock>30?'Urgent':'Pending')+'</span></div>').join(''):'<div style="color:var(--text3);font-size:12px;padding:10px;">All good</div>';
   const ag=stockData.filter(v=>v.days_in_stock>45).sort((a,b)=>b.days_in_stock-a.days_in_stock);
-  document.getElementById('tasks-age').innerHTML=ag.length?ag.map(v=>'<div class="li"><div class="ldot" style="background:'+(v.days_in_stock>90?'var(--red)':'var(--amber)')+'"></div><div class="lc"><div class="lt">Price Review — '+v.model+'</div><div class="lm">'+v.days_in_stock+' days · Cost: '+fmt0(v.total_cost)+'</div><div class="lv">🚗 '+v.plate+'</div></div><span class="badge '+(v.days_in_stock>90?'br':'ba')+'">'+v.days_in_stock+'d</span></div>').join(''):'<div style="color:var(--text3);font-size:12px;padding:10px;">All moving well</div>';
+  document.getElementById('tasks-age').innerHTML=ag.length?ag.map(v=>'<div class="li"><div class="ldot" style="background:'+(v.days_in_stock>90?'var(--red)':'var(--amber)')+'"></div><div class="lc"><div class="lt">Price Review — '+v.make_model+'</div><div class="lm">'+v.days_in_stock+' days · Cost: '+fmt0(v.total_cost)+'</div><div class="lv">🚗 '+v.plate+'</div></div><span class="badge '+(v.days_in_stock>90?'br':'ba')+'">'+v.days_in_stock+'d</span></div>').join(''):'<div style="color:var(--text3);font-size:12px;padding:10px;">All moving well</div>';
 }
 function addTask(){const t=document.getElementById('t-title').value.trim();if(!t){alert('Enter a task.');return;}const pr=document.getElementById('t-pri').value;const ct=document.getElementById('custom-tasks');ct.innerHTML='<div class="li"><div class="ldot" style="background:'+(pr==='Urgent'?'var(--red)':pr==='High'?'var(--amber)':'var(--blue)')+'"></div><div class="lc"><div class="lt">'+t+'</div><div class="lm">'+(document.getElementById('t-date').value||'No due date')+' · '+pr+'</div></div><span class="badge ba">'+pr+'</span></div>'+ct.innerHTML;closeM('addtask');['t-title','t-date','t-notes'].forEach(id=>document.getElementById(id).value='');}
 
@@ -1904,13 +1905,14 @@ function renderReports(){
     '<div style="background:var(--s2);border:1px solid var(--border);border-radius:var(--rs);padding:11px;text-align:center;"><div style="font-size:19px;font-weight:800;color:var(--green)">'+fmt0(totalGP)+'</div><div style="font-size:9.5px;color:var(--text3)">Gross Profit</div></div>'+
     '<div style="background:var(--s2);border:1px solid var(--border);border-radius:var(--rs);padding:11px;text-align:center;"><div style="font-size:19px;font-weight:800;color:'+(totalNP>=0?'var(--green)':'var(--red)')+'">'+fmt0(totalNP)+'</div><div style="font-size:9.5px;color:var(--text3)">Net Profit</div></div>'+
     '<div style="background:var(--s2);border:1px solid var(--border);border-radius:var(--rs);padding:11px;text-align:center;"><div style="font-size:19px;font-weight:800;color:var(--amber)">'+fmt0(totalSold>0?totalGP/totalSold:0)+'</div><div style="font-size:9.5px;color:var(--text3)">Avg/Car</div></div>';
-  const bm=APP_DATA.monthly.reduce((a,m)=>m.gross_profit>a.gross_profit?m:a);
-  document.getElementById('report-ai').innerHTML='<div class="ailabel">✨ AI Analysis</div><div class="aitext"><strong>'+fmt0(APP_DATA.monthly.reduce((a,m)=>a+m.gross_profit,0))+' gross all-time across 95 cars.</strong> Best month: <strong>'+bm.label+' — '+fmt0(bm.gross_profit)+' ('+bm.cars_sold+' cars).</strong> Investor model (Nov 2025) significantly boosted volume. BMW 518D (-£3,093) and Octavia VRS (-£1,746) are loss leaders — tighten pre-purchase checks on high-mileage models.</div>';
+  const bm=APP_DATA.monthly.length ? APP_DATA.monthly.reduce((a,m)=>m.gross_profit>a.gross_profit?m:a) : {label:'—',gross_profit:0,cars_sold:0};
+  const allTimeGP=APP_DATA.monthly.reduce((a,m)=>a+m.gross_profit,0);
+  document.getElementById('report-ai').innerHTML=APP_DATA.monthly.length ? '<div class="ailabel">✨ AI Analysis</div><div class="aitext"><strong>'+fmt0(allTimeGP)+' gross all-time across '+APP_DATA.sold.length+' cars.</strong> Best month: <strong>'+bm.label+' — '+fmt0(bm.gross_profit)+' ('+bm.cars_sold+' cars).</strong></div>' : '<div class="ailabel">✨ AI Analysis</div><div class="aitext">No sales data yet. Start selling vehicles to see analytics here.</div>';
   const top=APP_DATA.sold.sort((a,b)=>b.profit-a.profit).slice(0,15);
   const mp=top[0]?top[0].profit:1;
-  document.getElementById('report-bars').innerHTML=top.map(v=>'<div class="pbar"><div style="flex:1"><div style="font-size:11.5px;font-weight:600">'+v.model+'</div><div style="font-size:10px;color:var(--text3)">'+v.plate+'</div></div><div class="ptrack"><div class="pfill" style="width:'+(v.profit/mp*100)+'%;background:'+(v.profit>=0?'var(--green)':'var(--red)')+'"></div></div><div style="font-family:\'DM Mono\',monospace;font-size:11px;font-weight:700;color:'+(v.profit>=0?'var(--green)':'var(--red)')+';min-width:56px;text-align:right">'+fmt0(v.profit)+'</div></div>').join('');
-  const maxGP=Math.max.apply(null,APP_DATA.monthly.map(m=>Math.abs(m.gross_profit)));
-  document.getElementById('report-chart').innerHTML=APP_DATA.monthly.map(m=>'<div class="bc2"><div class="bar" style="height:'+Math.max(3,Math.abs(m.gross_profit)/maxGP*100)+'px;background:'+(m.gross_profit<0?'var(--red)':m.gross_profit>20000?'var(--green)':'var(--blue)')+'"></div><div class="blbl">'+m.label+'</div></div>').join('');
+  document.getElementById('report-bars').innerHTML=top.map(v=>'<div class="pbar"><div style="flex:1"><div style="font-size:11.5px;font-weight:600">'+v.make_model+'</div><div style="font-size:10px;color:var(--text3)">'+v.plate+'</div></div><div class="ptrack"><div class="pfill" style="width:'+(v.profit/mp*100)+'%;background:'+(v.profit>=0?'var(--green)':'var(--red)')+'"></div></div><div style="font-family:\'DM Mono\',monospace;font-size:11px;font-weight:700;color:'+(v.profit>=0?'var(--green)':'var(--red)')+';min-width:56px;text-align:right">'+fmt0(v.profit)+'</div></div>').join('');
+  const maxGP=APP_DATA.monthly.length ? Math.max.apply(null,APP_DATA.monthly.map(m=>Math.abs(m.gross_profit))) : 1;
+  document.getElementById('report-chart').innerHTML=APP_DATA.monthly.length ? APP_DATA.monthly.map(m=>'<div class="bc2"><div class="bar" style="height:'+Math.max(3,Math.abs(m.gross_profit)/maxGP*100)+'px;background:'+(m.gross_profit<0?'var(--red)':m.gross_profit>20000?'var(--green)':'var(--blue)')+'"></div><div class="blbl">'+m.label+'</div></div>').join('') : '<div style="padding:20px;text-align:center;color:var(--text3)">No sales data yet</div>';
   document.getElementById('recommendations').innerHTML=[
     {icon:'📱',title:'WhatsApp Business Integration',desc:'Auto-send viewing confirmations, invoice PDFs, and follow-up messages. Saves 30+ mins per day.'},
     {icon:'🤖',title:'AI Listing Generator (Auto Trader)',desc:'Paste rough notes → AI writes full Auto Trader description, spec list, and title. Cuts listing time by 80%.'},
@@ -1934,7 +1936,7 @@ async function addVehicle(){
   const recon=parseFloat(document.getElementById('nv-recon').value)||0;
   try {
     await api('POST', '/vehicles', {
-      plate, model, date_acquired: today(),
+      plate, make_model: model, date_acquired: today(),
       source: document.getElementById('nv-source').value,
       investor: document.getElementById('nv-investor').value,
       purchase_price: price, recon_cost: recon,
@@ -1949,12 +1951,12 @@ async function addVehicle(){
 function handleSearch(q){
   if(!q||q.length<2)return;
   q=q.toLowerCase();
-  const r=stockData.find(v=>v.plate.toLowerCase().indexOf(q)>=0||v.model.toLowerCase().indexOf(q)>=0);
+  const r=stockData.find(v=>v.plate.toLowerCase().indexOf(q)>=0||v.make_model.toLowerCase().indexOf(q)>=0);
   if(r){nav('stock',document.querySelector('[onclick*=stock]'));}
-  else{const s=APP_DATA.sold.find(v=>v.plate.toLowerCase().indexOf(q)>=0||v.model.toLowerCase().indexOf(q)>=0);if(s)nav('sold',document.querySelector('[onclick*=sold]'));}
+  else{const s=APP_DATA.sold.find(v=>v.plate.toLowerCase().indexOf(q)>=0||v.make_model.toLowerCase().indexOf(q)>=0);if(s)nav('sold',document.querySelector('[onclick*=sold]'));}
 }
-function exportStock(){const rows=[['Plate','Model','Investor','Total Cost','Days','Status','Notes']];stockData.forEach(v=>rows.push([v.plate,v.model,v.investor,v.total_cost,v.days_in_stock,v.status,v.notes]));dlCSV(rows,'stock.csv');}
-function exportSold(){const rows=[['Month','Plate','Model','Cost','Sold','Profit','Investor']];APP_DATA.sold.forEach(v=>rows.push([v.month,v.plate,v.model,v.total_cost,v.sold_price,v.profit,v.investor]));dlCSV(rows,'sold.csv');}
+function exportStock(){const rows=[['Plate','Model','Investor','Total Cost','Days','Status','Notes']];stockData.forEach(v=>rows.push([v.plate,v.make_model,v.investor,v.total_cost,v.days_in_stock,v.status,v.notes]));dlCSV(rows,'stock.csv');}
+function exportSold(){const rows=[['Month','Plate','Model','Cost','Sold','Profit','Investor']];APP_DATA.sold.forEach(v=>rows.push([v.month,v.plate,v.make_model,v.total_cost,v.sold_price,v.profit,v.investor]));dlCSV(rows,'sold.csv');}
 function dlCSV(rows,name){const csv=rows.map(r=>r.map(c=>'"'+(c||'').toString().replace(/"/g,'""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download=name;a.click();}
 
 function exportExcel(){
@@ -1979,7 +1981,7 @@ async function openStockBreakdown(plate){
   const v = stockData.find(x=>normP(x.plate)===normP(plate)) || APP_DATA.sold.find(x=>normP(x.plate)===normP(plate));
   if(!v) return;
   currentDetailStockId = v.stock_id || '';
-  document.getElementById('vd-title').textContent = v.model + ' — ' + v.plate;
+  document.getElementById('vd-title').textContent = v.make_model + ' — ' + v.plate;
   document.getElementById('vd-info').innerHTML =
     '<div class="g3" style="gap:8px;font-size:12px;">'+
     '<div><span style="color:var(--text3);">Stock ID:</span> '+(v.stock_id||'—')+'</div>'+
@@ -2120,7 +2122,7 @@ function initUI() {
   const months=[...new Set(APP_DATA.sold.map(v=>v.month).filter(Boolean))].sort().reverse();
   months.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=mLabel(m);sel.appendChild(o);});
   // Viewing vehicle select
-  const opts=stockData.map(v=>'<option value="'+v.plate+'">'+v.model+' · '+v.plate+'</option>').join('');
+  const opts=stockData.map(v=>'<option value="'+v.plate+'">'+v.make_model+' · '+v.plate+'</option>').join('');
   document.getElementById('vw-vehicle').innerHTML='<option value="">— Select —</option>'+opts;
   if(document.getElementById('col-won')) document.getElementById('col-won').value=today();
   // AT & IG init
@@ -2213,12 +2215,12 @@ function setText(id, text){ const el=document.getElementById(id); if(el) el.text
 function populateATNewSelect() {
   const sel = document.getElementById('at-new-plate');
   if(!sel) return;
-  sel.innerHTML = stockData.map(v=>'<option value="'+v.plate+'">'+v.model+' · '+v.plate+'</option>').join('');
+  sel.innerHTML = stockData.map(v=>'<option value="'+v.plate+'">'+v.make_model+' · '+v.plate+'</option>').join('');
 }
 function populateIGNewSelect() {
   const sel = document.getElementById('ig-new-plate');
   if(!sel) return;
-  sel.innerHTML = '<option value="">— Select vehicle —</option>'+stockData.map(v=>'<option value="'+v.plate+'">'+v.model+' · '+v.plate+'</option>').join('');
+  sel.innerHTML = '<option value="">— Select vehicle —</option>'+stockData.map(v=>'<option value="'+v.plate+'">'+v.make_model+' · '+v.plate+'</option>').join('');
 }
 
 // ─────────────────────────────────────────────
@@ -2244,7 +2246,7 @@ function connectAutoTrader() {
 // AUTO TRADER — CORE FUNCTIONS
 // ─────────────────────────────────────────────
 function mapVehicleToATPayload(v, listing) {
-  return {plate:v.plate, make:(v.model||'').split(' ')[0], model:(v.model||'').split(' ').slice(1).join(' '), year:v.year||new Date().getFullYear()-2, price:listing.price||v.total_cost, mileage:listing.mileage||0, colour:v.colour||'', fuel:v.fuel||'Petrol', transmission:v.transmission||'Manual', description:listing.description||'', title:listing.title||v.model};
+  return {plate:v.plate, make:(v.make_model||'').split(' ')[0], model:(v.make_model||'').split(' ').slice(1).join(' '), year:v.year||new Date().getFullYear()-2, price:listing.price||v.total_cost, mileage:listing.mileage||0, colour:v.colour||'', fuel:v.fuel||'Petrol', transmission:v.transmission||'Manual', description:listing.description||'', title:listing.title||v.make_model};
 }
 function generateATDescription(v, listing) {
   const miles = listing.mileage ? listing.mileage.toLocaleString()+'miles' : 'mileage to be confirmed';
@@ -2252,9 +2254,9 @@ function generateATDescription(v, listing) {
   const hist = (listingDescriptions[normP(v.plate)]||{}).specItems ? 'with a confirmed spec list' : '';
   const pics = vehiclePhotos[normP(v.plate)]||[];
   const photoNote = pics.length>0 ? pics.length+' photos included.' : '';
-  return `${v.model} — ${price}
+  return `${v.make_model} — ${price}
 
-A great example of the ${v.model}, presented in excellent condition and ready to drive away. This car has covered ${miles} and has been carefully prepared by our team here at SA Motors (TRIAL TASK) London.
+A great example of the ${v.make_model}, presented in excellent condition and ready to drive away. This car has covered ${miles} and has been carefully prepared by our team here at SA Motors (TRIAL TASK) London.
 
 The car has been thoroughly inspected and is presented clean inside and out. ${hist ? 'It comes '+hist+'.' : ''} Full details are available — don't hesitate to call or message us.
 
@@ -2266,7 +2268,7 @@ SA Motors (TRIAL TASK) — Reg. 15699982`;
 }
 function generateATTitle(v, listing) {
   const year = listing.year || (v.month ? v.month.slice(0,4) : new Date().getFullYear()-2);
-  return year+' '+v.model+(listing.mileage?' · '+Math.round(listing.mileage/1000)+'k Miles':'')+(listing.price?' · £'+listing.price.toLocaleString():'');
+  return year+' '+v.make_model+(listing.mileage?' · '+Math.round(listing.mileage/1000)+'k Miles':'')+(listing.price?' · £'+listing.price.toLocaleString():'');
 }
 function buildSpecListForAT(v) {
   const base = ['Air Conditioning','Central Locking','Electric Windows','Alloy Wheels','Bluetooth','DAB Radio','USB Connectivity','Parking Sensors'];
@@ -2329,11 +2331,11 @@ function renderAutoTrader() {
   if(atFilter==='all') {
     const noList = stockData.filter(v=>!atListings.find(l=>normP(l.plate)===normP(v.plate)));
     noList.forEach(v=>{
-      html += renderATCard({plate:v.plate, model:v.model, status:'not_started', price:0, mileage:0, title:'', description:'', specItems:[], photoIds:[], errors:[], id:null}, v);
+      html += renderATCard({plate:v.plate, model:v.make_model, status:'not_started', price:0, mileage:0, title:'', description:'', specItems:[], photoIds:[], errors:[], id:null}, v);
     });
   }
   shown.forEach(l=>{
-    const v=stockData.find(v=>normP(v.plate)===normP(l.plate))||{model:l.model||l.plate,plate:l.plate};
+    const v=stockData.find(v=>normP(v.plate)===normP(l.plate))||{make_model:l.model||l.plate,plate:l.plate};
     html += renderATCard(l, v);
   });
   document.getElementById('at-listing-grid').innerHTML = html || '<div style="color:var(--text3);text-align:center;padding:30px;font-size:13px;">No listings in this view</div>';
@@ -2354,14 +2356,14 @@ function renderATCard(l, v) {
   const checkHtml = checks.map(c=>`<span class="badge ${c.ok?'bg':'br'}" style="font-size:9px;">${c.label}</span>`).join(' ');
   const statusCls = {not_started:'at-none',draft:'at-draft',needs_review:'at-review',ready:'at-ready',live:'at-live',failed:'at-failed'}[l.status]||'at-none';
   const safePlate = escJs(l.plate);
-  const safeModel = escJs(v.model||l.plate);
+  const safeModel = escJs(v.make_model||l.plate);
   let actions = '';
   if(l.status==='not_started') actions += `<button class="btn btn-p btn-sm" onclick="openATEdit('${safePlate}')">+ Start Listing</button>`;
   if(l.status==='draft' || l.status==='needs_review') actions += `<button class="btn btn-b btn-sm" onclick="openATEdit('${safePlate}')">✏️ Edit</button><button class="btn btn-g btn-sm" onclick="atMarkReady('${safePlate}')">✓ Mark Ready</button>`;
   if(l.status==='ready') actions += `<button class="btn btn-b btn-sm" onclick="openATEdit('${safePlate}')">✏️ Edit</button><button class="btn btn-green btn-sm" onclick="atPublish('${safePlate}')">🚀 Publish</button>`;
   if(l.status==='live') actions += `<button class="btn btn-g btn-sm" onclick="openATEdit('${safePlate}')">✏️ Edit</button><span class="badge bg">Live on Auto Trader</span>`;
   actions += `<button class="btn btn-g btn-sm" onclick="openMediaManager('${safePlate}','${safeModel}')">📷 Photos</button><button class="btn btn-amber btn-sm" onclick="openIGFromStock('${safePlate}')">📱 IG Post</button>`;
-  return `<div class="listing-card"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;"><div style="flex:1;"><div class="listing-card-plate">${escHtml(l.plate)}</div><div class="listing-card-model">${escHtml(l.title||v.model||l.plate)}</div><div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-bottom:7px;"><span class="at-status ${statusCls}">${atStatusLabel(l.status)}</span>${l.price?`<span class="badge bb">£${l.price.toLocaleString()}</span>`:''}${l.mileage?`<span class="badge bk">${l.mileage.toLocaleString()}mi</span>`:''}<span class="badge bk">📷 ${pics.length}</span></div><div style="display:flex;gap:4px;flex-wrap:wrap;">${checkHtml}</div></div><div style="text-align:right;flex-shrink:0;font-size:11px;color:var(--text3);">${readyCount}/${checks.length} ready</div></div><div class="listing-actions">${actions}</div></div>`;
+  return `<div class="listing-card"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;"><div style="flex:1;"><div class="listing-card-plate">${escHtml(l.plate)}</div><div class="listing-card-model">${escHtml(l.title||v.make_model||l.plate)}</div><div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-bottom:7px;"><span class="at-status ${statusCls}">${atStatusLabel(l.status)}</span>${l.price?`<span class="badge bb">£${l.price.toLocaleString()}</span>`:''}${l.mileage?`<span class="badge bk">${l.mileage.toLocaleString()}mi</span>`:''}<span class="badge bk">📷 ${pics.length}</span></div><div style="display:flex;gap:4px;flex-wrap:wrap;">${checkHtml}</div></div><div style="text-align:right;flex-shrink:0;font-size:11px;color:var(--text3);">${readyCount}/${checks.length} ready</div></div><div class="listing-actions">${actions}</div></div>`;
 }
 
 function createATListing() {
@@ -2372,7 +2374,7 @@ function createATListing() {
   const existing = atListings.find(l=>normP(l.plate)===normP(plate));
   if(existing) { alert('Listing already exists for '+plate+'. Click Edit to update it.'); closeM('at-new'); openATEdit(plate); return; }
   const v = stockData.find(v=>normP(v.plate)===normP(plate));
-  const newL = {id:'AT-'+Date.now(), plate, model:v?v.model:'', title:'', description:'', price, mileage, status:'draft', specItems:[], photoIds:[], errors:[], approved:false, lastSyncedAt:null, publishUrl:''};
+  const newL = {id:'AT-'+Date.now(), plate, model:v?v.make_model:'', title:'', description:'', price, mileage, status:'draft', specItems:[], photoIds:[], errors:[], approved:false, lastSyncedAt:null, publishUrl:''};
   atListings.push(newL);
   saveToStorage();
   closeM('at-new');
@@ -2389,12 +2391,12 @@ function openATEdit(plate) {
   const v = stockData.find(v=>normP(v.plate)===normP(plate));
   let l = atListings.find(l=>normP(l.plate)===normP(plate));
   if(!l && v) {
-    l = {id:'AT-'+Date.now(), plate, model:v.model, title:'', description:'', price:0, mileage:0, status:'draft', specItems:[], photoIds:[], errors:[], approved:false, lastSyncedAt:null, publishUrl:''};
+    l = {id:'AT-'+Date.now(), plate, model:v.make_model, title:'', description:'', price:0, mileage:0, status:'draft', specItems:[], photoIds:[], errors:[], approved:false, lastSyncedAt:null, publishUrl:''};
     atListings.push(l);
     saveToStorage();
   }
   currentATListing = l;
-  document.getElementById('at-edit-title').textContent = (v?v.model:plate)+' — Edit Listing';
+  document.getElementById('at-edit-title').textContent = (v?v.make_model:plate)+' — Edit Listing';
   document.getElementById('at-edit-sub').textContent = plate + ' · Status: ' + atStatusLabel(l.status);
   showATStep('details');
   openM('at-edit');
@@ -2437,7 +2439,7 @@ function showATStep(step) {
 
   if(step==='desc') {
     const body = l.description || desc.body || (v ? generateATDescription(v,l) : '');
-    const title = l.title || generateATTitle(v||{model:plate,month:''},l);
+    const title = l.title || generateATTitle(v||{make_model:plate,month:''},l);
     bodyEl.innerHTML = `
       <div class="fg"><label class="fl">Title</label><input class="fi" id="at-f-title2" value="${escHtml(title)}"></div>
       <div class="fg"><label class="fl">Description</label><textarea class="fta" id="at-f-desc" style="min-height:220px;">${body}</textarea></div>
@@ -2650,7 +2652,7 @@ function generateInstagramCaption(v, listing) {
   const price = listing && listing.price ? '£'+listing.price.toLocaleString() : '';
   const mileage = listing && listing.mileage ? listing.mileage.toLocaleString()+' miles' : '';
   const parts = [
-    '🚗 '+(v.model||''),
+    '🚗 '+(v.make_model||''),
     price ? '💰 '+price : '',
     mileage ? '📍 '+mileage : '',
     '',
@@ -2662,7 +2664,7 @@ function generateInstagramCaption(v, listing) {
   return parts.join('\n');
 }
 function generateInstagramHashtags(v) {
-  const make = (v.model||'').split(' ')[0].toLowerCase().replace(/\s/g,'');
+  const make = (v.make_model||'').split(' ')[0].toLowerCase().replace(/\s/g,'');
   return [AT_DEFAULT_HASHTAGS, '#'+make, '#londondealer', '#mpmotor'].filter(Boolean).join(' ');
 }
 
@@ -2700,11 +2702,11 @@ function renderInstagram() {
   updateNavBadges();
 }
 function renderIGCard(p) {
-  const v = stockData.find(v=>normP(v.plate)===normP(p.plate))||{model:p.plate,plate:p.plate};
+  const v = stockData.find(v=>normP(v.plate)===normP(p.plate))||{make_model:p.plate,plate:p.plate};
   const pics = (p.photoIds||[]).map(id=>(vehiclePhotos[normP(p.plate)]||[]).find(ph=>ph.id===id)).filter(Boolean);
   const statusCls = {draft:'ig-draft',scheduled:'ba',posted:'ig-posted',failed:'br'}[p.status]||'bk';
   const safeId = escJs(p.id);
-  return `<div class="ig-post-card" style="margin-bottom:8px;"><div class="ig-thumb">${pics[0]&&pics[0].url?`<img src="${pics[0].url}" alt="">`:'📷'}${pics.length>1?`<div class="ig-count">+${pics.length}</div>`:''}</div><div style="flex:1;"><div style="font-size:13px;font-weight:700;margin-bottom:2px;">${escHtml(v.model)}</div><div style="font-size:10.5px;color:var(--text3);margin-bottom:5px;font-family:'DM Mono',monospace;">${escHtml(p.plate)}</div><span class="badge ${statusCls}" style="margin-bottom:6px;">${igStatusLabel(p.status)}</span>${p.status==='draft'?` <span class="badge bb" style="margin-bottom:6px;">${escHtml(p.type||'')}</span>`:''}<div style="font-size:11px;color:var(--text3);margin-top:4px;white-space:pre-wrap;max-height:48px;overflow:hidden;">${escHtml((p.caption||'').slice(0,100))}</div></div><div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0;"><button class="btn btn-b btn-xs" onclick="editIGPost('${safeId}')">Edit</button>${p.status==='draft'?`<button class="btn btn-p btn-xs" onclick="publishIGPost('${safeId}')">Post</button>`:''}<button class="btn btn-red btn-xs" onclick="deleteIGPost('${safeId}')">Del</button></div></div>`;
+  return `<div class="ig-post-card" style="margin-bottom:8px;"><div class="ig-thumb">${pics[0]&&pics[0].url?`<img src="${pics[0].url}" alt="">`:'📷'}${pics.length>1?`<div class="ig-count">+${pics.length}</div>`:''}</div><div style="flex:1;"><div style="font-size:13px;font-weight:700;margin-bottom:2px;">${escHtml(v.make_model)}</div><div style="font-size:10.5px;color:var(--text3);margin-bottom:5px;font-family:'DM Mono',monospace;">${escHtml(p.plate)}</div><span class="badge ${statusCls}" style="margin-bottom:6px;">${igStatusLabel(p.status)}</span>${p.status==='draft'?` <span class="badge bb" style="margin-bottom:6px;">${escHtml(p.type||'')}</span>`:''}<div style="font-size:11px;color:var(--text3);margin-top:4px;white-space:pre-wrap;max-height:48px;overflow:hidden;">${escHtml((p.caption||'').slice(0,100))}</div></div><div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0;"><button class="btn btn-b btn-xs" onclick="editIGPost('${safeId}')">Edit</button>${p.status==='draft'?`<button class="btn btn-p btn-xs" onclick="publishIGPost('${safeId}')">Post</button>`:''}<button class="btn btn-red btn-xs" onclick="deleteIGPost('${safeId}')">Del</button></div></div>`;
 }
 function igSelectVehicle(plate) {
   if(!plate) { document.getElementById('ig-photo-picker').innerHTML=''; return; }
@@ -2718,7 +2720,7 @@ function igSelectVehicle(plate) {
   }
   const picker = document.getElementById('ig-photo-picker');
   if(!pics.length) {
-    picker.innerHTML = `<div style="color:var(--text3);font-size:12px;padding:10px;">No photos for this vehicle yet. <button class="btn btn-g btn-xs" onclick="closeM('ig-new');openMediaManager('${escJs(plate)}','${escJs(v?v.model:plate)}')">Add Photos</button></div>`;
+    picker.innerHTML = `<div style="color:var(--text3);font-size:12px;padding:10px;">No photos for this vehicle yet. <button class="btn btn-g btn-xs" onclick="closeM('ig-new');openMediaManager('${escJs(plate)}','${escJs(v?v.make_model:plate)}')">Add Photos</button></div>`;
     return;
   }
   picker.innerHTML = pics.map(ph=>`<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:5px;border-radius:6px;border:1px solid var(--border);background:var(--s2);"><input type="checkbox" checked style="accent-color:var(--accent);width:14px;height:14px;" data-photo-id="${ph.id}">${ph.url?`<img src="${ph.url}" style="width:48px;height:36px;object-fit:cover;border-radius:4px;">`:`<div style="width:48px;height:36px;background:var(--s3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:16px;">📷</div>`}<div style="flex:1;"><div style="font-size:11px;font-weight:600;">${escHtml(PHOTO_TAG_LABELS[ph.tag]||ph.tag||'Photo')}</div>${ph.cover?'<span class="badge ba" style="font-size:9px;">Cover</span>':''}</div></label>`).join('');
@@ -2996,7 +2998,7 @@ function exportToExcelFormat() {
       'Month': v.month,
       'Date Acquired': v.date_acquired,
       'Number Plate': v.plate,
-      'Make & Model': v.model,
+      'Make & Model': v.make_model,
       'MP/Investor Name': v.investor,
       'Total Cost': v.total_cost,
       'Sold': v.sold_price,
@@ -3015,7 +3017,7 @@ function exportToExcelFormat() {
       'Month': v.month,
       'Date Acquired': v.date_acquired,
       'Plate Number': v.plate,
-      'Make & Model': v.model,
+      'Make & Model': v.make_model,
       'Investor/MP': v.investor,
       'Source': v.source,
       'Price': v.purchase_price,
@@ -3041,7 +3043,7 @@ function exportToExcelFormat() {
       'Source': c.source,
       'Date Won': c.date_won,
       'Plate Number': c.plate,
-      'Make & Model': c.model,
+      'Make & Model': c.make_model,
       'Location': c.addr,
       'Collection Date': c.collection_date||'',
       'Additional notes': c.notes

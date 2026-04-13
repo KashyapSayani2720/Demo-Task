@@ -56,7 +56,7 @@ export function importSoldStock(ws) {
     .filter(r => r['Number Plate reference'])
     .map(r => ({
       plate: normalizePlate(r['Number Plate reference']),
-      model: normalizeString(r['Make & Model']),
+      make_model: normalizeString(r['Make & Model']),
       month: normalizeMonth(r['Month']),
       date_acquired: normalizeDate(r['Date Aquired']),
       source: '',
@@ -105,7 +105,7 @@ export function importStockData(ws) {
 
       return {
         plate: normalizePlate(r['Plate Number']),
-        model: normalizeString(r['Make & Model']),
+        make_model: normalizeString(r['Make & Model']),
         month: normalizeMonth(r['Month']),
         date_acquired: normalizeDate(r['Date Aquired']),
         source: normalizeString(r['Source']),
