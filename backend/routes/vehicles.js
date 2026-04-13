@@ -1,10 +1,13 @@
 import { Router } from 'express';
 import Vehicle from '../models/Vehicle.js';
+import Investor from '../models/Investor.js';
 import MoneyIn from '../models/MoneyIn.js';
 import { nextStockId } from '../services/stockIdGenerator.js';
 import { normalizePlate, normalizeDate, normalizeMonth, normalizeAmount, normalizeString } from '../services/normalize.js';
 import { createVehicleFolders, listVehicleFiles } from '../services/fileManager.js';
 import upload from '../middleware/upload.js';
+
+const DEFAULT_INVESTOR_SPLIT = 0.5;
 
 const router = Router();
 
@@ -105,6 +108,22 @@ router.post('/:stock_id/sell', async (req, res, next) => {
     v.autoguard = normalizeString(b.autoguard);
     v.profit = v.sold_price - v.total_cost;
     v.month = normalizeMonth(v.date_sold);
+
+    // Split profit between investor and dealership (MP)
+    if (v.investor) {
+      const investorExists = await Investor.findOne({ name: v.investor });
+      if (investorExists) {
+        v.investor_profit = +(v.profit * DEFAULT_INVESTOR_SPLIT).toFixed(2);
+        v.mp_profit = +(v.profit - v.investor_profit).toFixed(2);
+      } else {
+        v.investor_profit = 0;
+        v.mp_profit = v.profit;
+      }
+    } else {
+      v.investor_profit = 0;
+      v.mp_profit = v.profit;
+    }
+
     await v.save();
 
     // Auto-create MoneyIn record for the sale

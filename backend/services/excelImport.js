@@ -1,6 +1,8 @@
 import ExcelJS from 'exceljs';
 import { normalizePlate, normalizeDate, normalizeMonth, normalizeAmount, normalizeString } from './normalize.js';
 
+const DEFAULT_INVESTOR_SPLIT = 0.5;
+
 /**
  * Extract the actual value from an exceljs cell value.
  * Handles formula objects ({ formula, result }), Date objects, etc.
@@ -54,33 +56,46 @@ export function importSoldStock(ws) {
   const rows = sheetToObjects(ws, 2); // headers on row 2
   return rows
     .filter(r => r['Number Plate reference'])
-    .map(r => ({
-      plate: normalizePlate(r['Number Plate reference']),
-      make_model: normalizeString(r['Make & Model']),
-      month: normalizeMonth(r['Month']),
-      date_acquired: normalizeDate(r['Date Aquired']),
-      source: '',
-      investor: normalizeString(r['SA/Investor Name']),
-      purchase_price: 0,
-      recon_cost: 0,
-      px_value: normalizeAmount(r['Part Ex']),
-      total_cost: normalizeAmount(r['Total Cost']),
-      status: 'Sold',
-      sold_price: normalizeAmount(r['Sold']),
-      profit: normalizeAmount(r['Total Profit']),
-      profit_share: normalizeString(r['SA/Investor Profit Share']),
-      investor_profit: normalizeAmount(r['Investor Profit']),
-      mp_profit: normalizeAmount(r['SA Profit']),
-      date_listed: normalizeDate(r['Date Listed']),
-      date_sold: normalizeDate(r['Date Sold']),
-      platform: normalizeString(r['Platfrom']),
-      customer_name: normalizeString(r['Customer Name']),
-      contact_info: normalizeString(r['Contact info']),
-      warranty: normalizeString(r['Warranty']),
-      invoice_number: normalizeString(r['Invoice Number']),
-      autoguard: normalizeString(r['AutoGuard Number']),
-      notes: ''
-    }));
+    .map(r => {
+      const profit = normalizeAmount(r['Total Profit']);
+      const investor = normalizeString(r['SA/Investor Name']);
+      let investor_profit = normalizeAmount(r['Investor Profit']);
+      let mp_profit = normalizeAmount(r['SA Profit']);
+
+      // Apply default 50/50 split if Excel doesn't have explicit values
+      if (investor && profit !== 0 && investor_profit === 0 && mp_profit === 0) {
+        investor_profit = +(profit * DEFAULT_INVESTOR_SPLIT).toFixed(2);
+        mp_profit = +(profit - investor_profit).toFixed(2);
+      }
+
+      return {
+        plate: normalizePlate(r['Number Plate reference']),
+        make_model: normalizeString(r['Make & Model']),
+        month: normalizeMonth(r['Month']),
+        date_acquired: normalizeDate(r['Date Aquired']),
+        source: '',
+        investor,
+        purchase_price: 0,
+        recon_cost: 0,
+        px_value: normalizeAmount(r['Part Ex']),
+        total_cost: normalizeAmount(r['Total Cost']),
+        status: 'Sold',
+        sold_price: normalizeAmount(r['Sold']),
+        profit,
+        profit_share: normalizeString(r['SA/Investor Profit Share']),
+        investor_profit,
+        mp_profit,
+        date_listed: normalizeDate(r['Date Listed']),
+        date_sold: normalizeDate(r['Date Sold']),
+        platform: normalizeString(r['Platfrom']),
+        customer_name: normalizeString(r['Customer Name']),
+        contact_info: normalizeString(r['Contact info']),
+        warranty: normalizeString(r['Warranty']),
+        invoice_number: normalizeString(r['Invoice Number']),
+        autoguard: normalizeString(r['AutoGuard Number']),
+        notes: ''
+      };
+    });
 }
 
 /**
@@ -103,20 +118,36 @@ export function importStockData(ws) {
       const rawStatus = normalizeString(r['Status']);
       const isValidStatus = VALID_STATUSES.includes(rawStatus);
 
+      const profit = normalizeAmount(r['Profit']);
+      const investor = normalizeString(r['Investor/SA']);
+      let investor_profit = 0;
+      let mp_profit = 0;
+
+      if (isSold && profit !== 0) {
+        if (investor) {
+          investor_profit = +(profit * DEFAULT_INVESTOR_SPLIT).toFixed(2);
+          mp_profit = +(profit - investor_profit).toFixed(2);
+        } else {
+          mp_profit = profit;
+        }
+      }
+
       return {
         plate: normalizePlate(r['Plate Number']),
         make_model: normalizeString(r['Make & Model']),
         month: normalizeMonth(r['Month']),
         date_acquired: normalizeDate(r['Date Aquired']),
         source: normalizeString(r['Source']),
-        investor: normalizeString(r['Investor/SA']),
+        investor,
         purchase_price: price,
         recon_cost: recon,
         px_value: normalizeAmount(r['PX Value']),
         total_cost,
         status: isSold ? 'Sold' : (isValidStatus ? rawStatus : 'In Stock'),
         sold_price: isSold ? normalizeAmount(soldVal) : 0,
-        profit: normalizeAmount(r['Profit']),
+        profit,
+        investor_profit,
+        mp_profit,
         notes: isValidStatus ? '' : rawStatus // Non-enum status values go into notes
       };
     });
