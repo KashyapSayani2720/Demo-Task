@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const collectionSchema = new mongoose.Schema({
   stock_id: { type: String, default: '' },
@@ -19,4 +19,4 @@ const collectionSchema = new mongoose.Schema({
   notes: { type: String, default: '' }
 }, { timestamps: true });
 
-module.exports = mongoose.model('Collection', collectionSchema);
+export default mongoose.model('Collection', collectionSchema);

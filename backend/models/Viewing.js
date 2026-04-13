@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const viewingSchema = new mongoose.Schema({
   stock_id: { type: String, default: '' },
@@ -15,4 +15,4 @@ const viewingSchema = new mongoose.Schema({
   outcome: { type: String, default: '' }
 }, { timestamps: true });
 
-module.exports = mongoose.model('Viewing', viewingSchema);
+export default mongoose.model('Viewing', viewingSchema);

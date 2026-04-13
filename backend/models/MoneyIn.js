@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const moneyInSchema = new mongoose.Schema({
   date: { type: String, default: '' },
@@ -10,4 +10,4 @@ const moneyInSchema = new mongoose.Schema({
   notes: { type: String, default: '' }
 }, { timestamps: true });
 
-module.exports = mongoose.model('MoneyIn', moneyInSchema);
+export default mongoose.model('MoneyIn', moneyInSchema);

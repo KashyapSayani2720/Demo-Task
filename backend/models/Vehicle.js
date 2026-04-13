@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const vehicleSchema = new mongoose.Schema({
   stock_id: { type: String, unique: true, index: true },
@@ -34,7 +34,6 @@ const vehicleSchema = new mongoose.Schema({
   todo: [String]
 }, { timestamps: true });
 
-// Virtual: days_in_stock
 vehicleSchema.virtual('days_in_stock').get(function () {
   if (!this.date_acquired) return 0;
   const start = new Date(this.date_acquired);
@@ -45,4 +44,4 @@ vehicleSchema.virtual('days_in_stock').get(function () {
 vehicleSchema.set('toJSON', { virtuals: true });
 vehicleSchema.set('toObject', { virtuals: true });
 
-module.exports = mongoose.model('Vehicle', vehicleSchema);
+export default mongoose.model('Vehicle', vehicleSchema);

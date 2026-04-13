@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const investorSchema = new mongoose.Schema({
   name: { type: String, unique: true, required: true },
@@ -7,4 +7,4 @@ const investorSchema = new mongoose.Schema({
   notes: { type: String, default: '' }
 }, { timestamps: true });
 
-module.exports = mongoose.model('Investor', investorSchema);
+export default mongoose.model('Investor', investorSchema);

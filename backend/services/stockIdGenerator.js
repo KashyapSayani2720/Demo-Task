@@ -1,6 +1,6 @@
-const Counter = require('../models/Counter');
+import Counter from '../models/Counter.js';
 
-async function nextStockId() {
+export async function nextStockId() {
   const c = await Counter.findOneAndUpdate(
     { _id: 'stock_id' },
     { $inc: { seq: 1 } },
@@ -9,12 +9,10 @@ async function nextStockId() {
   return 'STK-' + String(c.seq).padStart(4, '0');
 }
 
-async function resetCounter(startAt = 0) {
+export async function resetCounter(startAt = 0) {
   await Counter.findOneAndUpdate(
     { _id: 'stock_id' },
     { seq: startAt },
     { upsert: true }
   );
 }
-
-module.exports = { nextStockId, resetCounter };
