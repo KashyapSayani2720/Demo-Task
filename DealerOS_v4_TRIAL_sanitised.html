@@ -1322,24 +1322,25 @@ document.querySelectorAll('.moverlay').forEach(o => o.addEventListener('click', 
 // ════════════════════════════════════════════
 function renderDashboard() {
   document.getElementById('dash-date').textContent = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  const lm = APP_DATA.monthly[APP_DATA.monthly.length-1];
+  const lm = APP_DATA.monthly.length ? APP_DATA.monthly[APP_DATA.monthly.length-1] : {gross_profit:0,cars_sold:0,label:'—',revenue:0,net_profit:0};
   const allP = APP_DATA.sold.reduce((a,v)=>a+v.profit,0);
   const longStock = stockData.filter(v=>v.days_in_stock>60).length;
   const finTotal = finLog.reduce((a,e)=>a+e.amount,0);
   const pendFines = fines.filter(f=>f.status!=='Paid').reduce((a,f)=>a+f.amount,0);
+  const soldCount = APP_DATA.sold.length;
   document.getElementById('dash-stats').innerHTML =
     '<div class="stat blue"><div class="sl">In Stock</div><div class="sv">'+stockData.length+'</div><div class="ss">'+stockData.filter(v=>v.status==='Live').length+' live</div><div class="si">🚗</div></div>'+
-    '<div class="stat green"><div class="sl">Mar \'26 Profit</div><div class="sv">'+fmt0(lm.gross_profit)+'</div><div class="ss">'+lm.cars_sold+' cars · record</div><div class="si">💰</div></div>'+
+    '<div class="stat green"><div class="sl">Latest Profit</div><div class="sv">'+fmt0(lm.gross_profit)+'</div><div class="ss">'+lm.cars_sold+' cars</div><div class="si">💰</div></div>'+
     '<div class="stat amber"><div class="sl">60+ Days</div><div class="sv">'+longStock+'</div><div class="ss">Need price review</div><div class="si">⚠️</div></div>'+
-    '<div class="stat purple"><div class="sl">All-Time Profit</div><div class="sv">'+fmt0(allP)+'</div><div class="ss">95 cars sold</div><div class="si">📈</div></div>'+
+    '<div class="stat purple"><div class="sl">All-Time Profit</div><div class="sv">'+fmt0(allP)+'</div><div class="ss">'+soldCount+' cars sold</div><div class="si">📈</div></div>'+
     '<div class="stat red"><div class="sl">Unpaid Fines</div><div class="sv">'+fmt0(pendFines)+'</div><div class="ss">'+fines.filter(f=>f.status!=='Paid').length+' outstanding</div><div class="si">⚠️</div></div>';
   let alerts = '';
   if(longStock>0) alerts += '<div class="alert alt-r">⚠️ <strong>'+longStock+' vehicles</strong> over 60 days — pricing review needed.</div>';
   if(pendFines>0) alerts += '<div class="alert alt-a">⚠️ <strong>'+fmt0(pendFines)+'</strong> in unpaid fines outstanding.</div>';
   alerts += '<div class="alert alt-b">✨ v3 is live — check all new sections in the sidebar.</div>';
   document.getElementById('dash-alerts').innerHTML = alerts;
-  const maxP = Math.max.apply(null, APP_DATA.monthly.map(m=>m.gross_profit));
-  document.getElementById('profit-chart').innerHTML = APP_DATA.monthly.map(m=>'<div class="bc2"><div class="bar" style="height:'+Math.max(3,(m.gross_profit/maxP)*100)+'px;background:'+(m.gross_profit<0?'var(--red)':m.gross_profit>20000?'var(--green)':'var(--blue)')+'"></div><div class="blbl">'+m.label+'</div></div>').join('');
+  const maxP = APP_DATA.monthly.length ? Math.max.apply(null, APP_DATA.monthly.map(m=>m.gross_profit)) : 1;
+  document.getElementById('profit-chart').innerHTML = APP_DATA.monthly.length ? APP_DATA.monthly.map(m=>'<div class="bc2"><div class="bar" style="height:'+Math.max(3,(m.gross_profit/maxP)*100)+'px;background:'+(m.gross_profit<0?'var(--red)':m.gross_profit>20000?'var(--green)':'var(--blue)')+'"></div><div class="blbl">'+m.label+'</div></div>').join('') : '<div style="padding:20px;text-align:center;color:var(--text3)">No sales data yet</div>';
   const ss = stockData.slice().sort((a,b)=>b.days_in_stock-a.days_in_stock);
   document.getElementById('days-list').innerHTML = ss.map(v=>'<div class="li"><div class="ldot" style="background:'+(v.days_in_stock>90?'var(--red)':v.days_in_stock>45?'var(--amber)':'var(--green)')+'"></div><div class="lc"><div class="lt">'+v.model+'</div><div class="lm mono">'+v.plate+'</div></div><span class="'+dc(v.days_in_stock)+'">'+v.days_in_stock+'d</span></div>').join('');
   const top = APP_DATA.sold.filter(v=>v.profit>0).sort((a,b)=>b.profit-a.profit).slice(0,7);
@@ -1827,13 +1828,14 @@ function renderReports(){
     '<div style="background:var(--s2);border:1px solid var(--border);border-radius:var(--rs);padding:11px;text-align:center;"><div style="font-size:19px;font-weight:800;color:var(--green)">'+fmt0(totalGP)+'</div><div style="font-size:9.5px;color:var(--text3)">Gross Profit</div></div>'+
     '<div style="background:var(--s2);border:1px solid var(--border);border-radius:var(--rs);padding:11px;text-align:center;"><div style="font-size:19px;font-weight:800;color:'+(totalNP>=0?'var(--green)':'var(--red)')+'">'+fmt0(totalNP)+'</div><div style="font-size:9.5px;color:var(--text3)">Net Profit</div></div>'+
     '<div style="background:var(--s2);border:1px solid var(--border);border-radius:var(--rs);padding:11px;text-align:center;"><div style="font-size:19px;font-weight:800;color:var(--amber)">'+fmt0(totalSold>0?totalGP/totalSold:0)+'</div><div style="font-size:9.5px;color:var(--text3)">Avg/Car</div></div>';
-  const bm=APP_DATA.monthly.reduce((a,m)=>m.gross_profit>a.gross_profit?m:a);
-  document.getElementById('report-ai').innerHTML='<div class="ailabel">✨ AI Analysis</div><div class="aitext"><strong>'+fmt0(APP_DATA.monthly.reduce((a,m)=>a+m.gross_profit,0))+' gross all-time across 95 cars.</strong> Best month: <strong>'+bm.label+' — '+fmt0(bm.gross_profit)+' ('+bm.cars_sold+' cars).</strong> Investor model (Nov 2025) significantly boosted volume. BMW 518D (-£3,093) and Octavia VRS (-£1,746) are loss leaders — tighten pre-purchase checks on high-mileage models.</div>';
+  const bm=APP_DATA.monthly.length ? APP_DATA.monthly.reduce((a,m)=>m.gross_profit>a.gross_profit?m:a) : {label:'—',gross_profit:0,cars_sold:0};
+  const allTimeGP=APP_DATA.monthly.reduce((a,m)=>a+m.gross_profit,0);
+  document.getElementById('report-ai').innerHTML=APP_DATA.monthly.length ? '<div class="ailabel">✨ AI Analysis</div><div class="aitext"><strong>'+fmt0(allTimeGP)+' gross all-time across '+APP_DATA.sold.length+' cars.</strong> Best month: <strong>'+bm.label+' — '+fmt0(bm.gross_profit)+' ('+bm.cars_sold+' cars).</strong></div>' : '<div class="ailabel">✨ AI Analysis</div><div class="aitext">No sales data yet. Start selling vehicles to see analytics here.</div>';
   const top=APP_DATA.sold.sort((a,b)=>b.profit-a.profit).slice(0,15);
   const mp=top[0]?top[0].profit:1;
   document.getElementById('report-bars').innerHTML=top.map(v=>'<div class="pbar"><div style="flex:1"><div style="font-size:11.5px;font-weight:600">'+v.model+'</div><div style="font-size:10px;color:var(--text3)">'+v.plate+'</div></div><div class="ptrack"><div class="pfill" style="width:'+(v.profit/mp*100)+'%;background:'+(v.profit>=0?'var(--green)':'var(--red)')+'"></div></div><div style="font-family:\'DM Mono\',monospace;font-size:11px;font-weight:700;color:'+(v.profit>=0?'var(--green)':'var(--red)')+';min-width:56px;text-align:right">'+fmt0(v.profit)+'</div></div>').join('');
-  const maxGP=Math.max.apply(null,APP_DATA.monthly.map(m=>Math.abs(m.gross_profit)));
-  document.getElementById('report-chart').innerHTML=APP_DATA.monthly.map(m=>'<div class="bc2"><div class="bar" style="height:'+Math.max(3,Math.abs(m.gross_profit)/maxGP*100)+'px;background:'+(m.gross_profit<0?'var(--red)':m.gross_profit>20000?'var(--green)':'var(--blue)')+'"></div><div class="blbl">'+m.label+'</div></div>').join('');
+  const maxGP=APP_DATA.monthly.length ? Math.max.apply(null,APP_DATA.monthly.map(m=>Math.abs(m.gross_profit))) : 1;
+  document.getElementById('report-chart').innerHTML=APP_DATA.monthly.length ? APP_DATA.monthly.map(m=>'<div class="bc2"><div class="bar" style="height:'+Math.max(3,Math.abs(m.gross_profit)/maxGP*100)+'px;background:'+(m.gross_profit<0?'var(--red)':m.gross_profit>20000?'var(--green)':'var(--blue)')+'"></div><div class="blbl">'+m.label+'</div></div>').join('') : '<div style="padding:20px;text-align:center;color:var(--text3)">No sales data yet</div>';
   document.getElementById('recommendations').innerHTML=[
     {icon:'📱',title:'WhatsApp Business Integration',desc:'Auto-send viewing confirmations, invoice PDFs, and follow-up messages. Saves 30+ mins per day.'},
     {icon:'🤖',title:'AI Listing Generator (Auto Trader)',desc:'Paste rough notes → AI writes full Auto Trader description, spec list, and title. Cuts listing time by 80%.'},
