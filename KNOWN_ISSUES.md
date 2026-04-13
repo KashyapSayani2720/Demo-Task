@@ -27,6 +27,9 @@ Some cells in the original workbook contain formulas. The import handles formula
 - No image preview or thumbnail generation
 - "Open Folder" button opens the file server listing in a new tab, not the OS file explorer
 
+## Investor Validation
+Investors must be created on the Investors page before they can be assigned to a vehicle. The API rejects vehicle create, update, and sell requests that reference a non-existent investor name (HTTP 400). The value "SA" is a special case meaning dealership-owned and does not require an investor record.
+
 ## Missing Frontend Features
 - No vehicle delete button in the UI (API endpoint exists at DELETE /api/vehicles/:stock_id)
 - No collection-to-stock conversion button (API endpoint exists at POST /api/collections/:id/convert)

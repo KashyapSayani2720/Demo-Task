@@ -9,6 +9,23 @@ import upload from '../middleware/upload.js';
 
 const DEFAULT_INVESTOR_SPLIT = 0.5;
 
+/**
+ * Validate an investor name against the investors collection.
+ * Returns null if valid, or an error message string if invalid.
+ * Empty string and "SA" (case-insensitive) are always allowed.
+ */
+async function validateInvestor(name) {
+  if (!name) return null;
+  if (name.trim().toLowerCase() === 'sa') return null;
+  const found = await Investor.findOne({
+    name: { $regex: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }
+  });
+  if (!found) {
+    return `Investor '${name}' not found in investors collection. Create the investor first, or clear the investor field on this vehicle before marking it sold.`;
+  }
+  return null;
+}
+
 const router = Router();
 
 // GET /api/vehicles — list with optional filters
@@ -35,8 +52,11 @@ router.get('/:stock_id', async (req, res, next) => {
 // POST /api/vehicles — create new vehicle
 router.post('/', async (req, res, next) => {
   try {
-    const stock_id = await nextStockId();
     const b = req.body;
+    const investorErr = await validateInvestor(normalizeString(b.investor));
+    if (investorErr) return res.status(400).json({ error: investorErr });
+
+    const stock_id = await nextStockId();
     const price = normalizeAmount(b.purchase_price);
     const recon = normalizeAmount(b.recon_cost);
     const vehicle = await Vehicle.create({
@@ -65,6 +85,11 @@ router.put('/:stock_id', async (req, res, next) => {
     const v = await Vehicle.findOne({ stock_id: req.params.stock_id });
     if (!v) return res.status(404).json({ error: 'Vehicle not found' });
     const b = req.body;
+    if (b.investor !== undefined) {
+      const investorErr = await validateInvestor(normalizeString(b.investor));
+      if (investorErr) return res.status(400).json({ error: investorErr });
+    }
+
     if (b.plate !== undefined) v.plate = normalizePlate(b.plate);
     if (b.make_model !== undefined) v.make_model = normalizeString(b.make_model);
     if (b.source !== undefined) v.source = normalizeString(b.source);
@@ -110,15 +135,12 @@ router.post('/:stock_id/sell', async (req, res, next) => {
     v.month = normalizeMonth(v.date_sold);
 
     // Split profit between investor and dealership (MP)
-    if (v.investor) {
-      const investorExists = await Investor.findOne({ name: v.investor });
-      if (investorExists) {
-        v.investor_profit = +(v.profit * DEFAULT_INVESTOR_SPLIT).toFixed(2);
-        v.mp_profit = +(v.profit - v.investor_profit).toFixed(2);
-      } else {
-        v.investor_profit = 0;
-        v.mp_profit = v.profit;
-      }
+    const isSA = v.investor && v.investor.trim().toLowerCase() === 'sa';
+    if (v.investor && !isSA) {
+      const investorErr = await validateInvestor(v.investor);
+      if (investorErr) return res.status(400).json({ error: investorErr });
+      v.investor_profit = +(v.profit * DEFAULT_INVESTOR_SPLIT).toFixed(2);
+      v.mp_profit = +(v.profit - v.investor_profit).toFixed(2);
     } else {
       v.investor_profit = 0;
       v.mp_profit = v.profit;
