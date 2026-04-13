@@ -425,7 +425,10 @@ tr:hover td{background:var(--s2);}
           <button class="btn btn-amber" style="padding:12px;flex-direction:column;gap:5px;font-size:12px;justify-content:center;" onclick="nav('receipts',document.querySelector('[onclick*=receipts]'))">📷<br><strong>Scan Receipt</strong></button>
           <button class="btn btn-b" style="padding:12px;flex-direction:column;gap:5px;font-size:12px;justify-content:center;" onclick="nav('viewings',document.querySelector('[onclick*=viewings]'))">📅<br><strong>Book Viewing</strong></button>
           <button class="btn btn-g" style="padding:12px;flex-direction:column;gap:5px;font-size:12px;justify-content:center;" onclick="nav('banking',document.querySelector('[onclick*=banking]'))">🏦<br><strong>Banking</strong></button>
+          <button class="btn btn-b" style="padding:12px;flex-direction:column;gap:5px;font-size:12px;justify-content:center;" onclick="exportExcel()">📥<br><strong>Export Excel</strong></button>
+          <button class="btn btn-g" style="padding:12px;flex-direction:column;gap:5px;font-size:12px;justify-content:center;" onclick="document.getElementById('excel-import-input').click()">📤<br><strong>Import Excel</strong></button>
         </div>
+        <input type="file" id="excel-import-input" accept=".xlsx,.xls" style="display:none;" onchange="importExcel(this)">
       </div>
     </div>
     <div class="g2" style="margin-bottom:13px;">
@@ -1943,6 +1946,22 @@ function exportStock(){const rows=[['Plate','Model','Investor','Total Cost','Day
 function exportSold(){const rows=[['Month','Plate','Model','Cost','Sold','Profit','Investor']];APP_DATA.sold.forEach(v=>rows.push([v.month,v.plate,v.model,v.total_cost,v.sold_price,v.profit,v.investor]));dlCSV(rows,'sold.csv');}
 function dlCSV(rows,name){const csv=rows.map(r=>r.map(c=>'"'+(c||'').toString().replace(/"/g,'""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download=name;a.click();}
 
+function exportExcel(){
+  const a=document.createElement('a');a.href='/api/excel/export';a.download='DealerOS_Export.xlsx';document.body.appendChild(a);a.click();a.remove();
+}
+async function importExcel(input){
+  if(!input.files[0]) return;
+  const fd=new FormData();
+  fd.append('file',input.files[0]);
+  try{
+    const res=await fetch('/api/excel/import',{method:'POST',body:fd});
+    if(!res.ok) throw new Error(await res.text());
+    const r=await res.json();
+    alert('Import complete!\n\nVehicles added: '+r.added+'\nVehicles updated: '+r.updated+'\nSkipped: '+r.skipped+'\nExpenses: '+r.expenses+'\nMoney In: '+r.moneyIn+'\nMoney Out: '+r.moneyOut+'\nCollections: '+r.collections);
+    input.value='';
+    await bootApp();
+  }catch(e){alert('Import error: '+e.message);input.value='';}
+}
 
 var currentDetailStockId = '';
 async function openStockBreakdown(plate){
