@@ -379,7 +379,7 @@ tr:hover td{background:var(--s2);}
       <div class="sg-lbl">Finance</div>
       <button class="ni" onclick="nav('expenses',this)"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>Finance Log</button>
       <button class="ni" onclick="nav('receipts',this)"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>Receipts &amp; AI Scan<span class="nb a">NEW</span></button>
-      <button class="ni" onclick="nav('banking',this)"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Routes & Planning</button>
+      <button class="ni" onclick="nav('banking',this)"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Banking</button>
       <button class="ni" onclick="nav('invoices',this)"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8"/></svg>Investor Invoices</button>
       <button class="ni" onclick="nav('investors',this)"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/></svg>Investor Ledger</button>
       <button class="ni" onclick="nav('wages',this)"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>Staff &amp; Wages</button>
@@ -715,30 +715,46 @@ tr:hover td{background:var(--s2);}
 
   <!-- ═══ BANKING ═══ -->
   <div class="page" id="page-banking">
-    <div class="sh"><div class="stitle">Routes & Planning</div><button class="btn btn-b btn-sm" onclick="connectBarclays()">🗺️ Route Planner</button></div>
-    <div class="aip">
-      <div class="ailabel">🗺️ Route Planner</div>
-      <div class="aitext">Group incoming cars by region, see pending days, link multiple cars into one run, and plan pickup routes without jumping back and forth into Google Maps.</div>
-    </div>
+    <div class="sh"><div class="stitle">Banking — Money In &amp; Money Out</div></div>
     <div class="g4" style="margin-bottom:13px;" id="bank-stats"></div>
     <div class="g2" style="margin-bottom:13px;">
       <div class="card">
-        <div class="ch"><div class="ct">🏦 Account Summary</div><button class="btn btn-g btn-sm" onclick="connectBarclays()">Refresh</button></div>
-        <div id="bank-accounts"></div>
+        <div class="ch"><div class="ct">💰 Money In</div><button class="btn btn-g btn-sm" onclick="openM('addmoneyin')">+ Add</button></div>
+        <div class="tw"><table>
+          <thead><tr><th>Date</th><th>Category</th><th>Plate</th><th>Amount</th><th>Notes</th></tr></thead>
+          <tbody id="moneyin-tbody"></tbody>
+        </table></div>
       </div>
       <div class="card">
-        <div class="ch"><div class="ct">⚡ Reconciliation Status</div></div>
-        <div id="recon-status"></div>
+        <div class="ch"><div class="ct">💸 Money Out</div><button class="btn btn-g btn-sm" onclick="openM('addmoneyout')">+ Add</button></div>
+        <div class="tw"><table>
+          <thead><tr><th>Date</th><th>Category</th><th>Amount</th><th>Notes</th></tr></thead>
+          <tbody id="moneyout-tbody"></tbody>
+        </table></div>
       </div>
     </div>
-    <div class="card" style="margin-bottom:13px;">
-      <div class="ch"><div class="ct">Recent Transactions</div><div style="display:flex;gap:6px;"><select class="fi" style="width:auto;padding:4px 8px;font-size:11px;" id="tx-filter" onchange="renderBanking()"><option value="">All</option><option value="unmatched">Unmatched</option><option value="in">Credits</option><option value="out">Debits</option></select></div></div>
-      <div id="bank-txs"></div>
+  </div>
+  <!-- Add Money In Modal -->
+  <div class="moverlay" id="m-addmoneyin">
+    <div class="modal">
+      <div class="mh"><div class="mt">Add Money In</div><button class="mclose" onclick="closeM('addmoneyin')">✕</button></div>
+      <div class="fg"><label class="fl">Date</label><input class="fi" type="date" id="mi-date"></div>
+      <div class="fg"><label class="fl">Category</label><select class="fs" id="mi-cat"><option>Vehicle Sale</option><option>Investor Deposit</option><option>Warranty Claim</option><option>Refund</option><option>Other</option></select></div>
+      <div class="fg"><label class="fl">Plate (optional)</label><input class="fi fi-reg" id="mi-plate" placeholder="AB12 XYZ" oninput="this.value=this.value.toUpperCase()"></div>
+      <div class="fg"><label class="fl">Amount (£)</label><input class="fi" type="number" id="mi-amount" step="0.01"></div>
+      <div class="fg"><label class="fl">Notes</label><input class="fi" id="mi-notes" placeholder="Description..."></div>
+      <button class="btn btn-p" style="width:100%;margin-top:10px;" onclick="addMoneyIn()">Save</button>
     </div>
-    <div class="card">
-      <div class="ch"><div class="ct">💳 Investor Payout Centre</div></div>
-      <div class="aip" style="margin-bottom:11px;"><div class="ailabel">Payment Initiation</div><div class="aitext">Link multiple incoming cars into one trip, compare the nearest airport area, and keep a visible list of what is still waiting to be booked or collected.</div></div>
-      <div id="investor-payouts"></div>
+  </div>
+  <!-- Add Money Out Modal -->
+  <div class="moverlay" id="m-addmoneyout">
+    <div class="modal">
+      <div class="mh"><div class="mt">Add Money Out</div><button class="mclose" onclick="closeM('addmoneyout')">✕</button></div>
+      <div class="fg"><label class="fl">Date</label><input class="fi" type="date" id="mo-date"></div>
+      <div class="fg"><label class="fl">Category</label><select class="fs" id="mo-cat"><option>Vehicle Purchase</option><option>Recon</option><option>Transport</option><option>Wages</option><option>Overhead</option><option>Investor Payout</option><option>Other</option></select></div>
+      <div class="fg"><label class="fl">Amount (£)</label><input class="fi" type="number" id="mo-amount" step="0.01"></div>
+      <div class="fg"><label class="fl">Notes</label><input class="fi" id="mo-notes" placeholder="Description..."></div>
+      <button class="btn btn-p" style="width:100%;margin-top:10px;" onclick="addMoneyOut()">Save</button>
     </div>
   </div>
 
@@ -1737,23 +1753,41 @@ function connectBarclays() {
   renderBanking();
 }
 function renderBanking() {
-  const grouped = {};
-  collections.forEach(c=>{
-    const txt=((c.addr||'')+' '+(c.postcode||'')).toLowerCase();
-    const k = /edinburgh|glasgow|iverness|inverness/.test(txt) ? 'Scotland' : /manchester|telford|birmingham/.test(txt) ? 'North' : /enfield|london/.test(txt) ? 'London' : 'Other';
-    if(!grouped[k]) grouped[k]=[];
-    grouped[k].push(c);
-  });
-  const filter = document.getElementById('tx-filter') ? document.getElementById('tx-filter').value : '';
-  const rows = filter && grouped[filter] ? grouped[filter] : collections;
-  document.getElementById('bank-stats').innerHTML = '<div class="stat blue"><div class="sl">Incoming</div><div class="sv">'+collections.length+'</div></div><div class="stat amber"><div class="sl">Pending Days</div><div class="sv">'+collections.reduce((a,c)=>a+Number(c.days_pending||0),0)+'</div></div><div class="stat green"><div class="sl">Regions</div><div class="sv">'+Object.keys(grouped).length+'</div></div><div class="stat purple"><div class="sl">Linked Runs</div><div class="sv">'+collections.filter(c=>(c.linked_vehicles||[]).length).length+'</div></div>';
-  document.getElementById('bank-accounts').innerHTML = Object.keys(grouped).map(k=>'<div class="li"><div class="ldot" style="background:var(--blue)"></div><div class="lc"><div class="lt">'+k+'</div><div class="lm">'+grouped[k].length+' car(s)</div></div><span class="badge bb">'+(k==='Scotland'?'Use Edinburgh or Glasgow':'Check route')+'</span></div>').join('');
-  document.getElementById('recon-status').innerHTML = collections.length ? collections.map(c=>'<div class="li"><div class="ldot" style="background:var(--amber)"></div><div class="lc"><div class="lt">'+c.plate+' · '+c.make_model+'</div><div class="lm">'+(c.addr||'Address needed')+' · Pending '+(c.days_pending||0)+' days</div></div><span class="badge ba">'+(c.distance_note||'Map it')+'</span></div>').join('') : '<div style="color:var(--text3);font-size:12px;">No inbound cars.</div>';
-  document.getElementById('bank-txs').innerHTML = rows.length ? rows.map(c=>'<div class="bank-tx"><div class="bank-icon" style="background:rgba(59,130,246,.12);">📍</div><div class="bank-desc"><strong>'+c.plate+'</strong> · '+c.make_model+'<div class="bank-date">'+(c.addr||'Address needed')+' · Won '+fmtD(c.date_won)+'</div></div><div class="bank-amt">'+(c.scheduled_date?fmtD(c.scheduled_date):'TBC')+'</div></div>').join('') : '<div style="padding:12px;color:var(--text3);">No rows for this route filter.</div>';
-  document.getElementById('investor-payouts').innerHTML = '<div class="li"><div class="ldot" style="background:var(--green)"></div><div class="lc"><div class="lt">Google Maps autocomplete ready</div><div class="lm">Add your Maps key in the config and bind #col-addr to Places autocomplete.</div></div></div><div class="li"><div class="ldot" style="background:var(--purple)"></div><div class="lc"><div class="lt">Airport shortcut idea</div><div class="lm">Use this screen to compare Scotland pickups and group cars that can be collected in one run.</div></div></div>';
+  const mi = APP_DATA.money_in || [];
+  const mo = APP_DATA.money_out || [];
+  const totalIn = mi.reduce((a,e)=>a+(e.amount||0),0);
+  const totalOut = mo.reduce((a,e)=>a+(e.amount||0),0);
+  document.getElementById('bank-stats').innerHTML =
+    '<div class="stat green"><div class="sl">Total In</div><div class="sv">'+fmt0(totalIn)+'</div><div class="ss">'+mi.length+' entries</div></div>'+
+    '<div class="stat red"><div class="sl">Total Out</div><div class="sv">'+fmt0(totalOut)+'</div><div class="ss">'+mo.length+' entries</div></div>'+
+    '<div class="stat blue"><div class="sl">Net</div><div class="sv">'+fmt0(totalIn-totalOut)+'</div></div>'+
+    '<div class="stat purple"><div class="sl">This Month</div><div class="sv">'+fmt0(mi.filter(e=>(e.date||'').startsWith(new Date().toISOString().slice(0,7))).reduce((a,e)=>a+(e.amount||0),0))+'</div></div>';
+  document.getElementById('moneyin-tbody').innerHTML = mi.length ? mi.map(e=>'<tr><td>'+fmtD(e.date)+'</td><td>'+(e.category||'—')+'</td><td>'+(e.plate?'<span class="mono">'+e.plate+'</span>':'—')+'</td><td style="color:var(--green);font-weight:700">'+fmt(e.amount||0)+'</td><td style="font-size:11px;color:var(--text3);">'+escHtml(e.notes||'')+'</td></tr>').join('') : '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px;">No money in records</td></tr>';
+  document.getElementById('moneyout-tbody').innerHTML = mo.length ? mo.map(e=>'<tr><td>'+fmtD(e.date)+'</td><td>'+(e.category||'—')+'</td><td style="color:var(--red);font-weight:700">'+fmt(e.amount||0)+'</td><td style="font-size:11px;color:var(--text3);">'+escHtml(e.notes||'')+'</td></tr>').join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px;">No money out records</td></tr>';
 }
-function allocateTx(id){const t=bankTxs.find(t=>t.id===id);if(t){t.matched=true;renderBanking();}}
-function initiatePayment(name,amount){alert('💳 Payment Initiation (Barclays PIS API)\n\nRecipient: '+name+'\nAmount: '+fmt0(amount)+'\n\nTo enable real payments, implement the Barclays Payment Initiation Service API.\nThis requires FCA authorisation and Barclays consent flows.\n\nYour developer can set this up using: developer.barclays.com');}
+async function addMoneyIn(){
+  const date=document.getElementById('mi-date').value||today();
+  const category=document.getElementById('mi-cat').value;
+  const plate=document.getElementById('mi-plate').value.trim().toUpperCase();
+  const amount=parseFloat(document.getElementById('mi-amount').value)||0;
+  const notes=document.getElementById('mi-notes').value.trim();
+  if(!amount){alert('Enter an amount.');return;}
+  try {
+    await api('POST','/money-in',{date,category,plate,amount,notes});
+    closeM('addmoneyin');await bootApp();
+  } catch(e){alert('Error: '+e.message);}
+}
+async function addMoneyOut(){
+  const date=document.getElementById('mo-date').value||today();
+  const category=document.getElementById('mo-cat').value;
+  const amount=parseFloat(document.getElementById('mo-amount').value)||0;
+  const notes=document.getElementById('mo-notes').value.trim();
+  if(!amount){alert('Enter an amount.');return;}
+  try {
+    await api('POST','/money-out',{date,category,amount,notes});
+    closeM('addmoneyout');await bootApp();
+  } catch(e){alert('Error: '+e.message);}
+}
 
 // ════════════════════════════════════════════
 // INVESTORS
@@ -2161,7 +2195,7 @@ function initUI() {
   document.getElementById('sidebar-logo').src = LOGO;
   document.getElementById('dash-logo').src = LOGO;
   // Set today's date fields
-  ['exp-date','vw-date','wp-date','fn-date','fn-due','col-date','col-won','sell-date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=today();});
+  ['exp-date','vw-date','wp-date','fn-date','fn-due','col-date','col-won','sell-date','mi-date','mo-date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=today();});
   // Load saved media and listing state before first render
   loadFromStorage();
   // Populate sold filter
