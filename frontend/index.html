@@ -583,6 +583,7 @@ tr:hover td{background:var(--s2);}
         <input class="fi fi-reg" id="sell-reg" placeholder="Enter Reg Plate..." oninput="searchReg(this.value)" style="max-width:230px;font-size:17px;">
         <button class="btn btn-p" onclick="searchReg(document.getElementById('sell-reg').value)">Find</button>
       </div>
+      <div style="display:none;padding:12px;background:rgba(239,68,68,.1);border:1px solid var(--red);border-radius:var(--rs);margin-bottom:13px;font-size:13px;color:var(--red);" id="reg-not-found">Vehicle not found. Check the reg plate and try again.</div>
       <div style="display:none;" id="reg-result">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:11px;">
           <div style="font-size:28px;">🚗</div>
@@ -930,12 +931,12 @@ tr:hover td{background:var(--s2);}
       <div class="fg"><label class="fl">Make &amp; Model</label><input class="fi" id="nv-model" placeholder="e.g. VW Golf GTI"></div>
     </div>
     <div class="g2">
-      <div class="fg"><label class="fl">Purchase Price (£)</label><input class="fi" type="number" id="nv-price" placeholder="0.00"></div>
+      <div class="fg"><label class="fl">Purchase Price (£)</label><input class="fi" type="number" id="nv-price" placeholder="0.00" min="0" step="0.01"></div>
       <div class="fg"><label class="fl">Source</label><select class="fs" id="nv-source"><option>Copart</option><option>Motorway</option><option>Carwow</option><option>Facebook</option><option>Private</option><option>Part Exchange</option><option>BCA</option></select></div>
     </div>
     <div class="g2">
       <div class="fg"><label class="fl">Investor</label><select class="fs" id="nv-investor"><option>MP</option><option>James</option><option>Daniel</option><option>Joseph</option><option>Jeff</option><option>Adam</option><option>Anthony</option><option>Leonardo</option></select></div>
-      <div class="fg"><label class="fl">Recon Cost (£)</label><input class="fi" type="number" id="nv-recon" placeholder="0.00"></div>
+      <div class="fg"><label class="fl">Recon Cost (£)</label><input class="fi" type="number" id="nv-recon" placeholder="0.00" min="0" step="0.01"></div>
     </div>
     <div class="fg"><label class="fl">Notes / Status</label><textarea class="fta" id="nv-notes" placeholder="Prep notes, status..."></textarea></div>
     <div style="display:flex;gap:7px;justify-content:flex-end;">
@@ -1849,9 +1850,10 @@ function renderVAT() {
 // ════════════════════════════════════════════
 function searchReg(val) {
   val=val.trim().toUpperCase();
-  if(val.length<3)return;
+  if(val.length<3){document.getElementById('reg-not-found').style.display='none';return;}
   const v=findV(val);
-  if(!v){document.getElementById('reg-result').style.display='none';document.getElementById('sell-form').style.display='none';document.getElementById('invoice-output').style.display='none';return;}
+  if(!v){document.getElementById('reg-not-found').style.display='block';document.getElementById('reg-result').style.display='none';document.getElementById('sell-form').style.display='none';document.getElementById('invoice-output').style.display='none';return;}
+  document.getElementById('reg-not-found').style.display='none';
   currentVehicle=v;
   document.getElementById('rr-model').textContent=v.make_model;
   document.getElementById('rr-plate').textContent=v.plate;
@@ -1920,13 +1922,15 @@ async function markAsSold() {
   const btn=document.getElementById('sell-btn');
   btn.disabled=true;btn.textContent='Saving...';
   try {
+    const sharePct=parseFloat(document.getElementById('sell-share').value)||0;
     await api('POST', '/vehicles/'+v.stock_id+'/sell', {
       sold_price: sale,
       date_sold: saleDate,
       customer_name: customerName,
       contact_info: contactInfo,
       warranty: warranty,
-      invoice_number: invoiceNumber
+      invoice_number: invoiceNumber,
+      profit_share: sharePct
     });
     generateInvoice();
     document.getElementById('sell-reg').value='';
@@ -1944,15 +1948,29 @@ async function markAsSold() {
 }
 function printInv(){
   const content=document.getElementById('invoice-render').innerHTML;
+  openPrintWindow(content);
+}
+function openPrintWindow(content){
+  const css='body{font-family:Arial,sans-serif;margin:20px;background:#fff;}.inv-wrap{max-width:800px;margin:0 auto;font-size:12px;color:#111;line-height:1.5;}.inv-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;}.inv-logo-img{height:62px;object-fit:contain;}.inv-big-title{font-size:38px;font-weight:200;color:#333;letter-spacing:3px;margin-bottom:6px;}.inv-addr-text{font-size:10.5px;color:#444;line-height:1.8;margin-top:6px;}.inv-meta-block{text-align:right;font-size:11.5px;line-height:2;}.inv-table{width:100%;border-collapse:collapse;margin-bottom:13px;}th{background:#f0f0f0;padding:8px 11px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;border:1px solid #ccc;text-align:left;}td{padding:7px 11px;border:1px solid #ddd;font-size:11.5px;color:#222;}.row-total td{background:#e8e8e8;font-weight:800;font-size:12.5px;}.row-profit td{background:#111;color:#fff;font-weight:800;font-size:13px;}.row-investor td{background:#1a3a1a;color:#4ade80;font-weight:800;font-size:12.5px;}.inv-footer{text-align:center;font-size:10px;color:#888;margin-top:14px;border-top:1px solid #ddd;padding-top:11px;line-height:1.8;}@media print{body{margin:0;}}';
+  const html='<!DOCTYPE html><html><head><title>SA Motors (TRIAL TASK) Invoice</title><style>'+css+'</style></head><body>'+content+'</body></html>';
   const w=window.open('','_blank');
-  w.document.write('<!DOCTYPE html><html><head><title>SA Motors (TRIAL TASK) Invoice</title><style>body{font-family:Arial,sans-serif;margin:20px;background:#fff;}.inv-wrap{max-width:800px;margin:0 auto;font-size:12px;color:#111;line-height:1.5;}.inv-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;}.inv-logo-img{height:62px;object-fit:contain;}.inv-big-title{font-size:38px;font-weight:200;color:#333;letter-spacing:3px;margin-bottom:6px;}.inv-addr-text{font-size:10.5px;color:#444;line-height:1.8;margin-top:6px;}.inv-meta-block{text-align:right;font-size:11.5px;line-height:2;}.inv-table{width:100%;border-collapse:collapse;margin-bottom:13px;}th{background:#f0f0f0;padding:8px 11px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;border:1px solid #ccc;text-align:left;}td{padding:7px 11px;border:1px solid #ddd;font-size:11.5px;color:#222;}.row-total td{background:#e8e8e8;font-weight:800;font-size:12.5px;}.row-profit td{background:#111;color:#fff;font-weight:800;font-size:13px;}.row-investor td{background:#1a3a1a;color:#4ade80;font-weight:800;font-size:12.5px;}.inv-footer{text-align:center;font-size:10px;color:#888;margin-top:14px;border-top:1px solid #ddd;padding-top:11px;line-height:1.8;}@media print{body{margin:0;}}</style></head><body>'+content+'</body></html>');
-  w.document.close();setTimeout(()=>w.print(),500);
+  if(w){
+    w.document.write(html);w.document.close();
+    w.onload=function(){w.focus();w.print();};
+    setTimeout(()=>{try{w.focus();w.print();}catch(e){}},800);
+  } else {
+    const iframe=document.createElement('iframe');
+    iframe.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;border:none;z-index:99999;';
+    document.body.appendChild(iframe);
+    iframe.contentDocument.write(html);iframe.contentDocument.close();
+    setTimeout(()=>{iframe.contentWindow.focus();iframe.contentWindow.print();setTimeout(()=>document.body.removeChild(iframe),1000);},800);
+  }
 }
 function renderInvoiceList(){
   document.getElementById('inv-list').innerHTML=savedInvoices.length?savedInvoices.map((inv,i)=>'<div class="li"><div class="lc"><div class="lt">'+inv.invNum+' · '+inv.make_model+'</div><div class="lm">'+inv.plate+' · '+fmtD(inv.saleDate)+' · Sale: '+fmt0(inv.sale)+'</div><div style="display:flex;gap:5px;margin-top:4px;"><span class="badge bg">Profit: '+fmt0(inv.profit)+'</span><span class="badge bp">'+inv.investor+': '+fmt0(inv.invP)+'</span></div></div><div style="display:flex;gap:4px;flex-direction:column;"><button class="btn btn-g btn-xs" onclick="reView('+i+')">View</button><button class="btn btn-p btn-xs" onclick="rePrint('+i+')">PDF</button></div></div>').join(''):'<div style="color:var(--text3);font-size:12.5px;text-align:center;padding:22px;">No invoices yet — use <strong>Sell a Car</strong> to generate one.</div>';
 }
 function reView(i){nav('sellcar',document.querySelector('[onclick*=sellcar]'));setTimeout(()=>{document.getElementById('invoice-render').innerHTML=savedInvoices[i].html;document.getElementById('invoice-output').style.display='block';document.getElementById('invoice-output').scrollIntoView({behavior:'smooth'});},120);}
-function rePrint(i){const w=window.open('','_blank');w.document.write('<!DOCTYPE html><html><head><title>SA Motors (TRIAL TASK) Invoice</title><style>body{font-family:Arial,sans-serif;margin:20px;}.inv-wrap{max-width:800px;margin:0 auto;font-size:12px;color:#111;line-height:1.5;}.inv-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;}.inv-logo-img{height:62px;object-fit:contain;}.inv-big-title{font-size:38px;font-weight:200;color:#333;letter-spacing:3px;margin-bottom:6px;}.inv-addr-text{font-size:10.5px;color:#444;line-height:1.8;margin-top:6px;}.inv-meta-block{text-align:right;font-size:11.5px;line-height:2;}.inv-table{width:100%;border-collapse:collapse;margin-bottom:13px;}th{background:#f0f0f0;padding:8px 11px;font-size:10.5px;font-weight:700;text-transform:uppercase;border:1px solid #ccc;text-align:left;}td{padding:7px 11px;border:1px solid #ddd;font-size:11.5px;}.row-total td{background:#e8e8e8;font-weight:800;}.row-profit td{background:#111;color:#fff;font-weight:800;font-size:13px;}.row-investor td{background:#1a3a1a;color:#4ade80;font-weight:800;}.inv-footer{text-align:center;font-size:10px;color:#888;margin-top:14px;border-top:1px solid #ddd;padding-top:11px;line-height:1.8;}@media print{body{margin:0;}}</style></head><body>'+savedInvoices[i].html+'</body></html>');w.document.close();setTimeout(()=>w.print(),500);}
+function rePrint(i){openPrintWindow(savedInvoices[i].html);}
 
 // ════════════════════════════════════════════
 // TASKS
@@ -2010,8 +2028,9 @@ async function addVehicle(){
   const plate=document.getElementById('nv-plate').value.trim().toUpperCase();
   const model=document.getElementById('nv-model').value.trim();
   if(!plate||!model){alert('Enter plate and model.');return;}
-  const price=parseFloat(document.getElementById('nv-price').value)||0;
-  const recon=parseFloat(document.getElementById('nv-recon').value)||0;
+  const price=Math.max(0,parseFloat(document.getElementById('nv-price').value)||0);
+  const recon=Math.max(0,parseFloat(document.getElementById('nv-recon').value)||0);
+  if(price<=0){alert('Purchase price must be greater than 0.');return;}
   try {
     await api('POST', '/vehicles', {
       plate, make_model: model, date_acquired: today(),
@@ -2101,8 +2120,8 @@ async function uploadVehicleFile(){
   const fileInput = document.getElementById('vd-upload-file');
   if(!fileInput.files[0]){alert('Select a file');return;}
   const fd = new FormData();
-  fd.append('file', fileInput.files[0]);
   fd.append('category', document.getElementById('vd-upload-cat').value);
+  fd.append('file', fileInput.files[0]);
   try {
     const res = await fetch('/api/vehicles/'+currentDetailStockId+'/files', {method:'POST', body:fd});
     if(!res.ok) throw new Error(await res.text());
@@ -2907,10 +2926,29 @@ function deleteIGPost(id) {
 // ─────────────────────────────────────────────
 // PHOTO / MEDIA MANAGER
 // ─────────────────────────────────────────────
-function openMediaManager(plate, model) {
+async function openMediaManager(plate, model) {
   currentMediaPlate = plate;
   setText('media-title', model + ' — Media');
   setText('media-sub', plate);
+  const v = findV(plate);
+  if(v && v.stock_id){
+    try {
+      const files = await api('GET', '/vehicles/'+v.stock_id+'/files');
+      const np = normP(plate);
+      const photos = files.Photos || [];
+      if(photos.length){
+        if(!vehiclePhotos[np]) vehiclePhotos[np] = [];
+        const existing = vehiclePhotos[np];
+        photos.forEach(f=>{
+          if(!existing.find(p=>p.backendPath===f.path)){
+            existing.push({id:'srv-'+f.name, url:f.path, tag:PHOTO_ORDER_TEMPLATE[existing.length]||'front', cover:existing.length===0, order:existing.length, atUploaded:false, igUsed:false, backendPath:f.path});
+          }
+        });
+        vehiclePhotos[np] = existing;
+        saveToStorage();
+      }
+    } catch(e){}
+  }
   refreshMediaModal();
   openM('media');
 }
@@ -2952,8 +2990,8 @@ function handleMediaUpload(input) {
     pics.push({id:'ph-'+Date.now()+'-'+i, url, tag, cover:pics.length===0, order:pics.length, atUploaded:false, igUsed:false});
     if(stockId){
       const fd = new FormData();
-      fd.append('file', file);
       fd.append('category', 'Photos');
+      fd.append('file', file);
       fetch('/api/vehicles/'+stockId+'/files', {method:'POST', body:fd}).catch(()=>{});
     }
   });

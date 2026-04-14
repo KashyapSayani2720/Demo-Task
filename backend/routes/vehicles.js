@@ -144,10 +144,14 @@ router.post('/:stock_id/sell', async (req, res, next) => {
 
     // Split profit between investor and dealership (MP)
     const isSA = v.investor && v.investor.trim().toLowerCase() === 'sa';
+    const splitRatio = (b.profit_share != null && !isNaN(b.profit_share))
+      ? Math.max(0, Math.min(100, Number(b.profit_share))) / 100
+      : DEFAULT_INVESTOR_SPLIT;
+    v.profit_share = `${Math.round(splitRatio * 100)}%`;
     if (v.investor && !isSA) {
       const investorErr = await validateInvestor(v.investor);
       if (investorErr) return res.status(400).json({ error: investorErr });
-      v.investor_profit = +(v.profit * DEFAULT_INVESTOR_SPLIT).toFixed(2);
+      v.investor_profit = +(v.profit * splitRatio).toFixed(2);
       v.mp_profit = +(v.profit - v.investor_profit).toFixed(2);
     } else {
       v.investor_profit = 0;
