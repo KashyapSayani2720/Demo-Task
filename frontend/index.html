@@ -1408,7 +1408,7 @@ function renderStock() {
   document.getElementById('nb-stock').textContent = stockData.length;
   document.getElementById('stock-tbody').innerHTML = fl.map(v=>{
     const todo = (v.todo||[]).map(t=>'<span class="badge bk" style="margin:1px;">'+t+'</span>').join('') || '<span class="badge bg">Nothing left</span>';
-    return '<tr><td class="tdm">'+v.make_model+'<div style="font-size:10px;color:var(--text3);">'+fmtD(v.date_acquired)+'</div></td><td><span class="mono">'+v.plate+'</span></td><td>'+(v.source||'—')+'</td><td>'+v.investor+'</td><td style="font-weight:700">'+fmt0(v.total_cost)+'</td><td>'+v.days_in_stock+'d</td><td><span class="badge '+(v.website_listed?'bg':'bk')+'">'+(v.website_listed?'Listed':'Not live')+'</span></td><td><span class="badge '+(v.autotrader_listed?'bb':'bk')+'">'+(v.autotrader_listed?'Listed':'Not live')+'</span></td><td>'+todo+'<div style="font-size:10px;color:var(--text3);margin-top:4px;">'+escHtml(v.status||'')+'</div></td><td><div style="display:flex;gap:4px;flex-wrap:wrap;"><button class="btn btn-g btn-xs" onclick="openMediaManager(\''+v.plate+'\')">📷</button><button class="btn btn-b btn-xs" onclick="nav(\'autotrader\',document.querySelector(\'[onclick*=autotrader]\'))">AT</button><button class="btn btn-g btn-xs" onclick="openStockBreakdown(\''+v.plate+'\')">View</button></div></td></tr>';
+    return '<tr><td class="tdm">'+v.make_model+'<div style="font-size:10px;color:var(--text3);">'+fmtD(v.date_acquired)+'</div></td><td><span class="mono">'+v.plate+'</span></td><td>'+(v.source||'—')+'</td><td>'+v.investor+'</td><td style="font-weight:700">'+fmt0(v.total_cost)+'</td><td>'+v.days_in_stock+'d</td><td><span class="badge '+(v.website_listed?'bg':'bk')+'">'+(v.website_listed?'Listed':'Not live')+'</span></td><td><span class="badge '+(v.autotrader_listed?'bb':'bk')+'">'+(v.autotrader_listed?'Listed':'Not live')+'</span></td><td>'+todo+'<div style="font-size:10px;color:var(--text3);margin-top:4px;">'+escHtml(v.status||'')+'</div></td><td><div style="display:flex;gap:4px;flex-wrap:wrap;"><button class="btn btn-g btn-xs" onclick="openMediaManager(\''+v.plate+'\',\''+escJs(v.make_model)+'\')">📷</button><button class="btn btn-b btn-xs" onclick="nav(\'autotrader\',document.querySelector(\'[onclick*=autotrader]\'))">AT</button><button class="btn btn-g btn-xs" onclick="openStockBreakdown(\''+v.plate+'\')">View</button></div></td></tr>';
   }).join('');
 }
 
@@ -2118,7 +2118,7 @@ function initUI() {
   loadFromStorage();
   // Populate sold filter
   const sel=document.getElementById('sold-filter');
-  sel.innerHTML='<option value="all">All Months</option>';
+  sel.innerHTML='<option value="">All Months</option>';
   const months=[...new Set(APP_DATA.sold.map(v=>v.month).filter(Boolean))].sort().reverse();
   months.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=mLabel(m);sel.appendChild(o);});
   // Viewing vehicle select
