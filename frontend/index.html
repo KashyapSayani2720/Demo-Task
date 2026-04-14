@@ -575,7 +575,6 @@ tr:hover td{background:var(--s2);}
 
   <!-- ═══ SELL A CAR ═══ -->
   <div class="page" id="page-sellcar">
-    <div style="background:var(--amber);color:#000;padding:10px 16px;border-radius:var(--r);margin-bottom:13px;font-size:12px;font-weight:600;">Phase 2 — This module uses local data only. Full backend integration coming soon.</div>
     <div class="sh"><div class="stitle">🔑 Sell a Car — Generate Investor Invoice</div></div>
     <div class="aip"><div class="ailabel">🔑 Quick Guide</div><div class="aitext">Search reg → confirm details → enter sale price → generate SA Motors (TRIAL TASK) invoice. The invoice includes your logo, full cost breakdown, profit calculation, and investor share. Print or PDF to send directly to investor.</div></div>
     <div class="card" style="margin-bottom:13px;">
@@ -605,8 +604,16 @@ tr:hover td{background:var(--s2);}
         <div class="fg"><label class="fl">Investor</label><select class="fs" id="sell-investor"><option>MP</option><option>James</option><option>Daniel</option><option>Joseph</option><option>Jeff</option><option>Adam</option><option>Anthony</option><option>Leonardo</option></select></div>
       </div>
       <div class="g2">
+        <div class="fg"><label class="fl">Customer Name</label><input class="fi" id="sell-customer" placeholder="Customer full name"></div>
+        <div class="fg"><label class="fl">Customer Phone</label><input class="fi" id="sell-phone" placeholder="07xxx xxxxxx"></div>
+      </div>
+      <div class="g2">
         <div class="fg"><label class="fl">Investor Share %</label><select class="fs" id="sell-share" onchange="updateCalc()"><option value="30">30%</option><option value="40">40%</option><option value="50">50%</option><option value="25">25%</option><option value="20">20%</option><option value="0">0% (MP Only)</option></select></div>
         <div class="fg"><label class="fl">Sale Date</label><input class="fi" type="date" id="sell-date"></div>
+      </div>
+      <div class="g2">
+        <div class="fg"><label class="fl">Warranty (optional)</label><input class="fi" id="sell-warranty" placeholder="e.g. 3 months"></div>
+        <div class="fg"><label class="fl">Invoice Number (optional)</label><input class="fi" id="sell-invnum" placeholder="e.g. INV-001"></div>
       </div>
       <div style="background:var(--s2);border:1px solid var(--border);border-radius:var(--rs);padding:13px;margin-bottom:13px;">
         <div class="sl" style="margin-bottom:9px;">Live Calculation</div>
@@ -616,7 +623,7 @@ tr:hover td{background:var(--s2);}
         <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:13px;"><span style="font-weight:700">Gross Profit</span><span id="c-profit" style="font-weight:800;font-size:15px;color:var(--green)">—</span></div>
         <div style="display:flex;justify-content:space-between;font-size:12.5px;"><span style="color:var(--text3)">Investor Share (<span id="c-pct">30</span>%)</span><span id="c-inv" style="font-weight:700;color:var(--purple)">—</span></div>
       </div>
-      <button class="btn btn-p" style="width:100%;padding:11px;font-size:14px;" onclick="generateInvoice()">✅ Generate SA Motors (TRIAL TASK) Invoice</button>
+      <button class="btn btn-p" style="width:100%;padding:11px;font-size:14px;" id="sell-btn" onclick="markAsSold()">✅ Mark as Sold &amp; Generate Invoice</button>
     </div>
     <div id="invoice-output" style="display:none;">
       <div class="card" style="padding:0;overflow:hidden;">
@@ -1863,6 +1870,41 @@ function generateInvoice() {
   document.getElementById('invoice-output').style.display='block';
   document.getElementById('invoice-output').scrollIntoView({behavior:'smooth'});
   savedInvoices.unshift({invNum,make_model:v.make_model,plate:v.plate,sale,cost,profit,invP,pct,investor,saleDate,html});
+}
+async function markAsSold() {
+  if(!currentVehicle){alert('Search for a vehicle first.');return;}
+  const sale=parseFloat(document.getElementById('sell-price').value)||0;
+  if(!sale){alert('Enter the sale price.');return;}
+  const v=currentVehicle;
+  const saleDate=document.getElementById('sell-date').value||today();
+  const customerName=document.getElementById('sell-customer').value.trim();
+  const contactInfo=document.getElementById('sell-phone').value.trim();
+  const warranty=document.getElementById('sell-warranty').value.trim();
+  const invoiceNumber=document.getElementById('sell-invnum').value.trim();
+  const btn=document.getElementById('sell-btn');
+  btn.disabled=true;btn.textContent='Saving...';
+  try {
+    await api('POST', '/vehicles/'+v.stock_id+'/sell', {
+      sold_price: sale,
+      date_sold: saleDate,
+      customer_name: customerName,
+      contact_info: contactInfo,
+      warranty: warranty,
+      invoice_number: invoiceNumber
+    });
+    generateInvoice();
+    document.getElementById('sell-reg').value='';
+    document.getElementById('sell-price').value='';
+    document.getElementById('sell-customer').value='';
+    document.getElementById('sell-phone').value='';
+    document.getElementById('sell-warranty').value='';
+    document.getElementById('sell-invnum').value='';
+    await bootApp();
+  } catch(e) {
+    alert('Error marking as sold: '+e.message);
+  } finally {
+    btn.disabled=false;btn.textContent='\u2705 Mark as Sold & Generate Invoice';
+  }
 }
 function printInv(){
   const content=document.getElementById('invoice-render').innerHTML;
