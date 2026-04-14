@@ -2075,9 +2075,13 @@ async function uploadVehicleFile(){
     openStockBreakdown(stockData.find(v=>v.stock_id===currentDetailStockId)?.plate || '');
   } catch(e) { alert('Upload error: '+e.message); }
 }
-function openVehicleFolder(){
+async function openVehicleFolder(){
   if(!currentDetailStockId) return;
-  window.open('/files/Cars/'+currentDetailStockId+'/', '_blank');
+  try {
+    const res = await fetch('/api/vehicles/'+currentDetailStockId+'/open-folder');
+    const data = await res.json();
+    if(!res.ok) alert('Could not open folder: '+(data.error||'Unknown error'));
+  } catch(e) { alert('Error: '+e.message); }
 }
 function showSoldBreakdown(i){
   const v = APP_DATA.sold[i];
@@ -2904,10 +2908,18 @@ function handleMediaUpload(input) {
   const np = normP(plate);
   if(!vehiclePhotos[np]) vehiclePhotos[np] = [];
   const pics = vehiclePhotos[np];
+  const v = findV(plate);
+  const stockId = v ? v.stock_id : '';
   [...input.files].forEach((file,i)=>{
     const url = URL.createObjectURL(file);
     const tag = PHOTO_ORDER_TEMPLATE[pics.length]||'front';
     pics.push({id:'ph-'+Date.now()+'-'+i, url, tag, cover:pics.length===0, order:pics.length, atUploaded:false, igUsed:false});
+    if(stockId){
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('category', 'Photos');
+      fetch('/api/vehicles/'+stockId+'/files', {method:'POST', body:fd}).catch(()=>{});
+    }
   });
   vehiclePhotos[np] = pics;
   saveToStorage();

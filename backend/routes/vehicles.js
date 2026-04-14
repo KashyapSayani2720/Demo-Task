@@ -1,4 +1,8 @@
 import { Router } from 'express';
+import { exec } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import Vehicle from '../models/Vehicle.js';
 import Investor from '../models/Investor.js';
 import MoneyIn from '../models/MoneyIn.js';
@@ -6,6 +10,10 @@ import { nextStockId } from '../services/stockIdGenerator.js';
 import { normalizePlate, normalizeDate, normalizeMonth, normalizeAmount, normalizeString } from '../services/normalize.js';
 import { createVehicleFolders, listVehicleFiles } from '../services/fileManager.js';
 import upload from '../middleware/upload.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const STORAGE_ROOT = path.resolve(__dirname, '..', '..', process.env.STORAGE_ROOT || 'storage');
 
 const DEFAULT_INVESTOR_SPLIT = 0.5;
 
@@ -180,6 +188,22 @@ router.post('/:stock_id/files', upload.single('file'), async (req, res, next) =>
       path: `/files/Cars/${req.params.stock_id}/${req.body.category || 'Documents'}/${req.file.filename}`
     });
   } catch (err) { next(err); }
+});
+
+// GET /api/vehicles/:stock_id/open-folder — open vehicle folder in native file explorer
+router.get('/:stock_id/open-folder', (req, res) => {
+  const folder = path.resolve(STORAGE_ROOT, 'Cars', req.params.stock_id);
+  if (!fs.existsSync(folder)) {
+    fs.mkdirSync(folder, { recursive: true });
+  }
+  const platform = process.platform;
+  const cmd = platform === 'win32' ? `explorer "${folder}"` :
+              platform === 'darwin' ? `open "${folder}"` :
+              `xdg-open "${folder}"`;
+  exec(cmd, (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ ok: true, folder });
+  });
 });
 
 export default router;

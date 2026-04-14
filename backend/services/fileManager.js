@@ -1,7 +1,10 @@
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
-const STORAGE_ROOT = process.env.STORAGE_ROOT || './storage';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const STORAGE_ROOT = path.resolve(__dirname, '..', '..', process.env.STORAGE_ROOT || 'storage');
 
 const VEHICLE_FOLDERS = ['Photos', 'Documents', 'ServiceHistory', 'MOT', 'Purchase', 'Sale', 'Delivery', 'Collection'];
 
