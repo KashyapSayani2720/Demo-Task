@@ -1,7 +1,7 @@
 import ExcelJS from 'exceljs';
 import { normalizePlate, normalizeDate, normalizeMonth, normalizeAmount, normalizeString } from './normalize.js';
 
-const DEFAULT_INVESTOR_SPLIT = 0.5;
+const DEFAULT_INVESTOR_SPLIT = 0.3;
 
 /**
  * Extract the actual value from an exceljs cell value.

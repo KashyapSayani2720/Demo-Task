@@ -21,7 +21,7 @@ import Collection from '../backend/models/Collection.js';
 import MoneyIn from '../backend/models/MoneyIn.js';
 import MoneyOut from '../backend/models/MoneyOut.js';
 import Counter from '../backend/models/Counter.js';
-import { createVehicleFolders } from '../backend/services/fileManager.js';
+import { createVehicleFolders,createTempFolder } from '../backend/services/fileManager.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -127,6 +127,7 @@ async function seed() {
     // 8. Create vehicle folders on disk
     const allVehicles = await Vehicle.find({}, 'stock_id');
     let folderCount = 0;
+    createTempFolder();
     for (const v of allVehicles) {
       try { createVehicleFolders(v.stock_id); folderCount++; } catch (e) { /* skip */ }
     }

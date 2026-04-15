@@ -49,4 +49,10 @@ export function deleteVehicleFolder(stock_id) {
   }
 }
 
+export function createTempFolder() {
+  const root = path.join(STORAGE_ROOT, 'temp');
+  fs.mkdirSync(root, { recursive: true });
+  return root;
+}
+
 export { VEHICLE_FOLDERS };

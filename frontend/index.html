@@ -60,6 +60,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .btn-green{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.2);}
 .btn-amber{background:rgba(245,158,11,.12);color:var(--amber);border:1px solid rgba(245,158,11,.2);}
 .btn-red{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.2);}
+.btn:disabled{opacity:0.45;cursor:not-allowed;pointer-events:none;filter:grayscale(0.3);}
 
 /* ── PAGES ── */
 .page{padding:18px;display:none;animation:fadeIn .2s ease;}
@@ -437,8 +438,8 @@ tr:hover td{background:var(--s2);}
       <div class="card"><div class="ch"><div class="ct">Quick Actions</div></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">
           <button class="btn btn-green" style="padding:12px;flex-direction:column;gap:5px;font-size:12px;justify-content:center;" onclick="nav('sellcar',document.querySelector('[onclick*=sellcar]'))">🔑<br><strong>Sell a Car</strong></button>
-          <button class="btn btn-amber" style="padding:12px;flex-direction:column;gap:5px;font-size:12px;justify-content:center;" onclick="nav('receipts',document.querySelector('[onclick*=receipts]'))">📷<br><strong>Scan Receipt</strong></button>
-          <button class="btn btn-b" style="padding:12px;flex-direction:column;gap:5px;font-size:12px;justify-content:center;" onclick="nav('viewings',document.querySelector('[onclick*=viewings]'))">📅<br><strong>Book Viewing</strong></button>
+          <button class="btn btn-amber" style="padding:12px;flex-direction:column;gap:5px;font-size:12px;justify-content:center;" disabled title="Coming Soon">📷<br><strong>Scan Receipt</strong></button>
+          <button class="btn btn-b" style="padding:12px;flex-direction:column;gap:5px;font-size:12px;justify-content:center;" disabled title="Coming Soon">📅<br><strong>Book Viewing</strong></button>
           <button class="btn btn-g" style="padding:12px;flex-direction:column;gap:5px;font-size:12px;justify-content:center;" onclick="nav('banking',document.querySelector('[onclick*=banking]'))">🏦<br><strong>Banking</strong></button>
           <button class="btn btn-b" style="padding:12px;flex-direction:column;gap:5px;font-size:12px;justify-content:center;" onclick="exportExcel()">📥<br><strong>Export Excel</strong></button>
           <button class="btn btn-g" style="padding:12px;flex-direction:column;gap:5px;font-size:12px;justify-content:center;" onclick="document.getElementById('excel-import-input').click()">📤<br><strong>Import Excel</strong></button>
@@ -503,7 +504,11 @@ tr:hover td{background:var(--s2);}
       </div>
       <div class="card">
         <div class="ch"><div class="ct">🚚 Pending Deliveries</div></div>
-        <div id="deliveries-list"></div>
+          <div class="coming-soon-msg">
+            <div class="cs-icon">🚧</div>
+            <div class="cs-title">Coming Soon</div>
+            <div class="cs-desc">This feature is under development. Check back soon!</div>
+        </div>
       </div>
     </div>
     <div class="card" style="margin-top:13px;">
@@ -592,7 +597,10 @@ tr:hover td{background:var(--s2);}
     <div class="card" style="margin-bottom:13px;">
       <div class="ch"><div class="ct">Step 1 — Find Vehicle</div></div>
       <div style="display:flex;gap:8px;margin-bottom:13px;">
-        <input class="fi fi-reg" id="sell-reg" placeholder="Enter Reg Plate..." onkeydown="if(event.key==='Enter')searchReg(this.value)" style="max-width:230px;font-size:17px;">
+        <div style="position:relative;">
+          <input class="fi fi-reg" id="sell-reg" placeholder="Enter Reg Plate..." onkeydown="if(event.key==='Enter')searchReg(this.value)" oninput="onRegInput(this.value)" style="max-width:230px;font-size:17px;">
+          <div id="reg-suggestions" style="display:none;position:absolute;top:100%;left:0;min-width:320px;background:var(--s2);border:1px solid var(--border);border-radius:var(--rs);margin-top:4px;z-index:200;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.35);"></div>
+        </div>
         <button class="btn btn-p" onclick="searchReg(document.getElementById('sell-reg').value)">Find</button>
       </div>
       <div style="display:none;padding:12px;background:rgba(239,68,68,.1);border:1px solid var(--red);border-radius:var(--rs);margin-bottom:13px;font-size:13px;color:var(--red);" id="reg-not-found">Vehicle not found. Check the reg plate and try again.</div>
@@ -902,8 +910,8 @@ tr:hover td{background:var(--s2);}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">
       <button class="btn btn-g" style="padding:13px;flex-direction:column;gap:5px;font-size:11.5px;" onclick="closeM('quickadd');openM('addvehicle')">🚗<br>Add Vehicle</button>
       <button class="btn btn-green" style="padding:13px;flex-direction:column;gap:5px;font-size:11.5px;" onclick="closeM('quickadd');nav('sellcar',document.querySelector('[onclick*=sellcar]'))">🔑<br>Sell a Car</button>
-      <button class="btn btn-amber" style="padding:13px;flex-direction:column;gap:5px;font-size:11.5px;" onclick="closeM('quickadd');openM('addreceipt')">📷<br>Scan Receipt</button>
-      <button class="btn btn-b" style="padding:13px;flex-direction:column;gap:5px;font-size:11.5px;" onclick="closeM('quickadd');openM('addviewing')">📅<br>Book Viewing</button>
+      <button class="btn btn-amber" style="padding:13px;flex-direction:column;gap:5px;font-size:11.5px;" disabled title="Coming Soon">📷<br>Scan Receipt</button>
+      <button class="btn btn-b" style="padding:13px;flex-direction:column;gap:5px;font-size:11.5px;" disabled title="Coming Soon">📅<br>Book Viewing</button>
       <button class="btn btn-g" style="padding:13px;flex-direction:column;gap:5px;font-size:11.5px;" onclick="closeM('quickadd');openM('addfine')">⚠️<br>Log Fine</button>
       <button class="btn btn-g" style="padding:13px;flex-direction:column;gap:5px;font-size:11.5px;" onclick="closeM('quickadd');openM('addexpense')">💸<br>Log Cost</button>
     </div>
@@ -999,7 +1007,7 @@ tr:hover td{background:var(--s2);}
   <div class="modal">
     <div class="mh"><div class="mt">Log Collection / Delivery</div><button class="mclose" onclick="closeM('addcollection')">✕</button></div>
     <div class="g2">
-      <div class="fg"><label class="fl">Type</label><select class="fs" id="col-type"><option>Collection</option><option>Delivery</option></select></div>
+      <div class="fg"><label class="fl">Type</label><select class="fs" id="col-type"><option>Collection</option></select></div>
       <div class="fg"><label class="fl">Reg Plate</label><input class="fi fi-reg" id="col-plate" placeholder="AB12 XYZ" oninput="this.value=this.value.toUpperCase()" style="font-size:15px;"></div>
     </div>
     <div class="g2">
@@ -1250,7 +1258,7 @@ tr:hover td{background:var(--s2);}
         <div class="ch"><div class="ct">Photos <span id="media-photo-count"></span></div>
           <div style="display:flex;gap:5px;">
             <button class="btn btn-g btn-sm" onclick="document.getElementById('media-file-input').click()">+ Add Photos</button>
-            <button class="btn btn-amber btn-sm" onclick="autoOrderPhotos()">🔁 Auto-Order</button>
+            <button class="btn btn-amber btn-sm" disabled onclick="autoOrderPhotos()">🔁 Auto-Order</button>
           </div>
         </div>
         <input type="file" id="media-file-input" multiple accept="image/*" style="display:none;" onchange="handleMediaUpload(this)">
@@ -1411,33 +1419,53 @@ function renderDashboard() {
   let alerts = '';
   if(longStock>0) alerts += '<div class="alert alt-r">⚠️ <strong>'+longStock+' vehicles</strong> over 60 days — pricing review needed.</div>';
   if(pendFines>0) alerts += '<div class="alert alt-a">⚠️ <strong>'+fmt0(pendFines)+'</strong> in unpaid fines outstanding.</div>';
-  alerts += '<div class="alert alt-b">✨ v3 is live — check all new sections in the sidebar.</div>';
   document.getElementById('dash-alerts').innerHTML = alerts;
   const maxP = APP_DATA.monthly.length ? Math.max.apply(null, APP_DATA.monthly.map(m=>m.gross_profit)) : 1;
-  document.getElementById('profit-chart').innerHTML = APP_DATA.monthly.length ? APP_DATA.monthly.map(m=>'<div class="bc2"><div class="bar" style="height:'+Math.max(3,(m.gross_profit/maxP)*100)+'px;background:'+(m.gross_profit<0?'var(--red)':m.gross_profit>20000?'var(--green)':'var(--blue)')+'"></div><div class="blbl">'+m.label+'</div></div>').join('') : '<div style="padding:20px;text-align:center;color:var(--text3)">No sales data yet</div>';
+  document.getElementById('profit-chart').innerHTML =
+  APP_DATA.monthly.length
+    ? APP_DATA.monthly.map(m => {
+        const profit = m.gross_profit || 0;
+        const height = Math.max(3, (Math.abs(profit) / maxP) * 100);
+        const color =
+          profit < 0
+            ? 'var(--red)'
+            : profit > 20000
+            ? 'var(--green)'
+            : 'var(--blue)';
+
+        return `
+          <div class="bc2">
+            <div 
+              class="bar"
+              title="£${Math.round(profit).toLocaleString('en-GB')} profit in ${m.label}"
+              style="height:${height}px;background:${color}">
+            </div>
+            <div class="blbl">
+              ${m.label}<br>
+              <small style="color:var(--text3);font-weight:600;">
+                £${Math.round(profit).toLocaleString('en-GB')}
+              </small>
+            </div>
+          </div>
+        `;
+      }).join('')
+    : '<div style="padding:20px;text-align:center;color:var(--text3)">No sales data yet</div>';
   const ss = stockData.slice().sort((a,b)=>b.days_in_stock-a.days_in_stock);
   document.getElementById('days-list').innerHTML = ss.map(v=>'<div class="li"><div class="ldot" style="background:'+(v.days_in_stock>90?'var(--red)':v.days_in_stock>45?'var(--amber)':'var(--green)')+'"></div><div class="lc"><div class="lt">'+v.make_model+'</div><div class="lm mono">'+v.plate+'</div></div><span class="'+dc(v.days_in_stock)+'">'+v.days_in_stock+'d</span></div>').join('');
   const top = APP_DATA.sold.filter(v=>v.profit>0).sort((a,b)=>b.profit-a.profit).slice(0,7);
   const mp = top[0]?top[0].profit:1;
   document.getElementById('top-profit').innerHTML = top.map(v=>'<div class="pbar"><div style="flex:1"><div style="font-size:12px;font-weight:600">'+v.make_model+'</div><div style="font-size:10px;color:var(--text3)">'+v.plate+'</div></div><div class="ptrack"><div class="pfill" style="width:'+(v.profit/mp*100)+'%;background:var(--green)"></div></div><div style="font-family:\'DM Mono\',monospace;font-size:11.5px;font-weight:700;color:var(--green);min-width:58px;text-align:right">'+fmt0(v.profit)+'</div></div>').join('');
-  // Media widgets
-  const atLive = atListings.filter(l=>l.status==='live').length;
-  const atDraft = atListings.filter(l=>l.status==='draft'||l.status==='needs_review').length;
-  const atReady = atListings.filter(l=>l.status==='ready').length;
-  const igPosted = igPosts.filter(p=>p.status==='posted'&&p.postedAt&&p.postedAt.startsWith(new Date().toISOString().slice(0,7))).length;
-  const igDraft = igPosts.filter(p=>p.status==='draft').length;
-  const missingPhotos = stockData.filter(v=>!(vehiclePhotos[normP(v.plate)]||[]).length).length;
-  const missingDesc = stockData.filter(v=>!atListings.find(l=>normP(l.plate)===normP(v.plate)&&l.description)).length;
-  const mediaWidgets = '<div class="card" style="margin-bottom:13px;"><div class="ch"><div class="ct">📢 Listings &amp; Social Status</div><div style="display:flex;gap:6px;"><button class="btn btn-g btn-xs" onclick="nav(\'autotrader\',document.querySelector(\'[onclick*=autotrader]\'))">Auto Trader →</button><button class="btn btn-g btn-xs" onclick="nav(\'instagram\',document.querySelector(\'[onclick*=instagram]\'))">Instagram →</button></div></div><div class="g4"><div style="background:var(--s2);border:1px solid var(--border);border-radius:var(--rs);padding:10px;text-align:center;"><div style="font-size:18px;font-weight:800;color:var(--green)">'+atLive+'</div><div style="font-size:9.5px;color:var(--text3)">AT Live</div></div><div style="background:var(--s2);border:1px solid var(--border);border-radius:var(--rs);padding:10px;text-align:center;"><div style="font-size:18px;font-weight:800;color:var(--blue2)">'+atDraft+'</div><div style="font-size:9.5px;color:var(--text3)">AT Drafts</div></div><div style="background:var(--s2);border:1px solid var(--border);border-radius:var(--rs);padding:10px;text-align:center;"><div style="font-size:18px;font-weight:800;color:var(--purple)">'+atReady+'</div><div style="font-size:9.5px;color:var(--text3)">AT Ready</div></div><div style="background:var(--s2);border:1px solid var(--border);border-radius:var(--rs);padding:10px;text-align:center;"><div style="font-size:18px;font-weight:800;color:var(--orange)">'+igPosted+'</div><div style="font-size:9.5px;color:var(--text3)">IG This Month</div></div></div><div class="div"></div><div style="display:flex;gap:8px;flex-wrap:wrap;"><span class="badge '+(missingPhotos>0?'br':'bg')+'">'+(missingPhotos>0?'⚠️ '+missingPhotos+' missing photos':'✓ All photos OK')+'</span><span class="badge '+(missingDesc>0?'ba':'bg')+'">'+(missingDesc>0?'⚠️ '+missingDesc+' missing descriptions':'✓ All described')+'</span><span class="badge '+(igDraft>0?'bo':'bk')+'">'+igDraft+' IG drafts</span></div></div>';
-  document.getElementById('dash-media-widgets').innerHTML = mediaWidgets;
-  document.getElementById('dash-ai').innerHTML = '<div class="ailabel">✨ AI Snapshot</div><div class="aitext"><strong>All-time: '+fmt0(allP)+' gross profit across 95 cars.</strong> Best month: March 2026 ('+fmt0(lm.gross_profit)+', '+lm.cars_sold+' cars). Investor pool: '+fmt0(APP_DATA.investors.reduce((a,i)=>a+i.available,0))+' available to deploy. BMW 518D (PG66) lost £3,093 — review buying strategy for high-mileage diesels. Recommendation: Use the Receipts scanner for petrol and parts — you\'re likely missing £200–£400/month in unlogged costs.</div>';
+  // Media widgets — Coming Soon
+  document.getElementById('dash-media-widgets').innerHTML = '<div class="card" style="margin-bottom:13px;"><div class="ch"><div class="ct">📢 Listings &amp; Social Status</div></div><div class="coming-soon-msg"><div class="cs-icon">🚀</div><div class="cs-title">Coming Soon</div><div class="cs-desc">This feature is currently under development.</div></div></div>';
+  // AI Snapshot — Coming Soon
+  document.getElementById('dash-ai').innerHTML = '<div class="ailabel">✨ AI Snapshot</div><div class="coming-soon-msg" style="padding:30px 20px;"><div class="cs-icon">🤖</div><div class="cs-title">Coming Soon</div><div class="cs-desc">This feature is currently under development.</div></div>';
 }
 
 // ════════════════════════════════════════════
 // STOCK
 // ════════════════════════════════════════════
 function showComingSoon(el){
-  const wrap=document.getElementById('stock-tbody').closest('.card');
+  const wrap=document.querySelector('#page-stock .card');
   document.querySelectorAll('#page-stock .tabs .tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
   wrap.innerHTML='<div class="coming-soon-msg"><div class="cs-icon">🚧</div><div class="cs-title">Coming Soon</div><div class="cs-desc">This feature is under development.</div></div>';
@@ -1449,8 +1477,15 @@ function filterStock(f,el){stockFilter=f;document.querySelectorAll('#page-stock 
 }
 function renderStock() {
   let fl = stockData.slice();
+  if (searchQuery && searchQuery.length >= 2) {
+    fl = fl.filter(v => v.plate.toLowerCase().includes(searchQuery) || v.make_model.toLowerCase().includes(searchQuery));
+  }
   document.getElementById('stock-count').textContent='· '+fl.length+' vehicles';
   document.getElementById('nb-stock').textContent = stockData.length;
+  if (!fl.length) {
+    document.getElementById('stock-tbody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:18px;">No matching stock found.</td></tr>';
+    return;
+  }
   document.getElementById('stock-tbody').innerHTML = fl.map(v=>{
     const todo = (v.todo||[]).map(t=>'<span class="badge bk" style="margin:1px;">'+t+'</span>').join('') || '<span class="badge bg">Nothing left</span>';
     return '<tr><td class="tdm">'+v.make_model+'<div style="font-size:10px;color:var(--text3);">'+fmtD(v.date_acquired)+'</div></td><td><span class="mono">'+v.plate+'</span></td><td>'+(v.source||'—')+'</td><td>'+v.investor+'</td><td style="font-weight:700">'+fmt0(v.total_cost)+'</td><td>'+v.days_in_stock+'d</td><td><span class="badge bk" style="font-size:9px;color:#fff;opacity:1;">Coming Soon</span></td><td><span class="badge bk" style="font-size:9px;color:#fff;opacity:1;">Coming Soon</span></td><td><span class="badge bk" style="font-size:9px;color:#fff;opacity:1;">Coming Soon</span></td><td><div style="display:flex;gap:4px;flex-wrap:wrap;"><button class="btn btn-g btn-xs" onclick="openMediaManager(\''+v.plate+'\',\''+escJs(v.make_model)+'\')">📷</button><button class="btn btn-b btn-xs" onclick="nav(\'autotrader\',document.querySelector(\'[onclick*=autotrader]\'))">AT</button><button class="btn btn-g btn-xs" onclick="openStockBreakdown(\''+v.plate+'\')">View</button></div></td></tr>';
@@ -1462,7 +1497,15 @@ function renderStock() {
 // ════════════════════════════════════════════
 function renderSold() {
   const f=document.getElementById('sold-filter').value;
-  const arr=(f?APP_DATA.sold.filter(v=>v.month===f):APP_DATA.sold).slice().sort((a,b)=>(b.date_sold||'').localeCompare(a.date_sold||''));
+  let arr=(f?APP_DATA.sold.filter(v=>v.month===f):APP_DATA.sold).slice().sort((a,b)=>(b.date_sold||'').localeCompare(a.date_sold||''));
+  if (searchQuery && searchQuery.length >= 2) {
+    arr = arr.filter(v => v.plate.toLowerCase().includes(searchQuery) || v.make_model.toLowerCase().includes(searchQuery));
+  }
+  arr = arr.sort((a,b)=>(b.date_sold||'').localeCompare(a.date_sold||''));
+  if (!arr.length) {
+    document.getElementById('sold-tbody').innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--text3);padding:18px;">No matching sold vehicles found.</td></tr>';
+    return;
+  }
   document.getElementById('sold-tbody').innerHTML=arr.map((v,i)=>'<tr><td>'+mLabel(v.month)+'</td><td class="tdm">'+v.make_model+'</td><td><span class="mono">'+v.plate+'</span></td><td>'+fmtD(v.date_acquired)+'</td><td>'+(v.date_sold?fmtD(v.date_sold):'—')+'</td><td>'+(v.source||'—')+'</td><td>'+v.days_in_stock+'d</td><td>'+fmt0(v.total_cost)+'</td><td>'+fmt0(v.sold_price)+'</td><td style="color:'+(v.profit>=0?'var(--green)':'var(--red)')+';font-weight:700">'+fmt(v.profit)+'</td><td>'+(v.investor||'SA')+'</td><td><button class="btn btn-g btn-xs" onclick="showSoldBreakdown('+i+')">Full</button></td></tr>').join('');
 }
 
@@ -1474,7 +1517,7 @@ function renderCollections() {
   const outgoing = deliveries.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   document.getElementById('col-stats').innerHTML='<div class="stat blue"><div class="sl">Incoming Cars</div><div class="sv">'+incoming.length+'</div></div><div class="stat amber"><div class="sl">Pending</div><div class="sv">'+incoming.filter(c=>c.status!=='Collected').length+'</div></div><div class="stat green"><div class="sl">Deliveries</div><div class="sv">'+outgoing.length+'</div></div><div class="stat purple"><div class="sl">Grouped Runs</div><div class="sv">'+incoming.filter(c=>(c.linked_vehicles||[]).length).length+'</div></div>';
   document.getElementById('collections-list').innerHTML=incoming.length?incoming.map(c=>'<div class="li"><div class="ldot" style="background:var(--amber)"></div><div class="lc"><div class="lt">'+c.plate+' — '+c.make_model+'</div><div class="lm">'+(c.addr||'Address needed')+' · Won '+fmtD(c.date_won)+'</div><div class="lv">Pending '+(c.days_pending||0)+' days · '+(c.distance_note||'Distance to be checked')+'</div></div><span class="badge ba">'+c.status+'</span></div>').join(''):'<div style="color:var(--text3);font-size:12px;padding:10px;">No inbound cars</div>';
-  document.getElementById('deliveries-list').innerHTML=outgoing.length?outgoing.map(c=>'<div class="li"><div class="ldot" style="background:var(--blue)"></div><div class="lc"><div class="lt">'+c.plate+' — '+c.make_model+'</div><div class="lm">'+(c.addr||'Address needed')+' · '+fmtD(c.date)+'</div><div class="lv">Driver: '+(c.driver||'TBC')+'</div></div><span class="badge bb">'+c.status+'</span></div>').join(''):'<div style="color:var(--text3);font-size:12px;padding:10px;">No deliveries logged</div>';
+  // document.getElementById('deliveries-list').innerHTML=outgoing.length?outgoing.map(c=>'<div class="li"><div class="ldot" style="background:var(--blue)"></div><div class="lc"><div class="lt">'+c.plate+' — '+c.make_model+'</div><div class="lm">'+(c.addr||'Address needed')+' · '+fmtD(c.date)+'</div><div class="lv">Driver: '+(c.driver||'TBC')+'</div></div><span class="badge bb">'+c.status+'</span></div>').join(''):'<div style="color:var(--text3);font-size:12px;padding:10px;">No deliveries logged</div>';
   const all = incoming.map(c=>Object.assign({},c,{type:'Incoming'})).concat(outgoing.map(c=>Object.assign({},c,{type:'Delivery'})));
   document.getElementById('col-tbody').innerHTML=all.map(c=>'<tr><td><span class="badge '+(c.type==='Incoming'?'ba':'bb')+'">'+c.type+'</span></td><td class="tdm">'+c.make_model+'</td><td><span class="mono">'+c.plate+'</span></td><td>'+(c.type==='Incoming'?fmtD(c.date_won):fmtD(c.date||c.scheduled_date))+'</td><td>'+(c.addr||'—')+'</td><td>'+(c.driver||'—')+'</td><td>'+(c.cost?fmt0(c.cost):'—')+'</td><td>'+(c.status||'Pending')+'<div style="font-size:10px;color:var(--text3);">'+(c.linked_vehicles&&c.linked_vehicles.length?'Linked: '+c.linked_vehicles.join(', '):'')+'</div></td></tr>').join('');
 }
@@ -1640,16 +1683,20 @@ async function addFine(){
       ref: document.getElementById('fn-ref').value,
       notes: document.getElementById('fn-notes').value
     });
-    closeM('addfine'); await bootApp();
+    ['fn-plate','fn-type','fn-date','fn-amount','fn-due','fn-ref','fn-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    closeM('addfine');
+    const fnRes = await fetch('/api/fines');
+    if (fnRes.ok) fines = await fnRes.json();
+    renderFines(); renderDashboard();
   } catch(e) { alert('Error: '+e.message); }
 }
 async function markFinePaid(i){
   const f=fines[i]; if(!f) return;
-  try { await api('PUT', '/fines/'+(f._id||f.id), {status:'Paid'}); await bootApp(); } catch(e) { alert('Error: '+e.message); }
+  try { await api('PUT', '/fines/'+(f._id||f.id), {status:'Paid'}); fines[i].status='Paid'; renderFines(); renderDashboard(); } catch(e) { alert('Error: '+e.message); }
 }
 async function appealFine(i){
   const f=fines[i]; if(!f) return;
-  try { await api('PUT', '/fines/'+(f._id||f.id), {status:'Appealing'}); await bootApp(); } catch(e) { alert('Error: '+e.message); }
+  try { await api('PUT', '/fines/'+(f._id||f.id), {status:'Appealing'}); fines[i].status='Appealing'; renderFines(); renderDashboard(); } catch(e) { alert('Error: '+e.message); }
 }
 
 // ════════════════════════════════════════════
@@ -1867,12 +1914,49 @@ function renderVAT() {
 // ════════════════════════════════════════════
 // SELL A CAR
 // ════════════════════════════════════════════
+function findPartialV(query) {
+  const nq=normP(query);
+  const qUp=query.trim().toUpperCase();
+  const all=[...(stockData||[]),...((APP_DATA&&APP_DATA.sold)||[])];
+  return all.filter(v=>normP(v.plate).includes(nq)||(v.make_model||'').toUpperCase().includes(qUp)).slice(0,6);
+}
+function hideSuggestions(){document.getElementById('reg-suggestions').style.display='none';}
+function selectSuggestion(plate){
+  document.getElementById('sell-reg').value=plate;
+  hideSuggestions();
+  searchReg(plate);
+}
+function onRegInput(val){
+  val=val.trim().toUpperCase();
+  if(val.length<2){hideSuggestions();return;}
+  if(findV(val)){hideSuggestions();return;}
+  const matches=findPartialV(val);
+  const box=document.getElementById('reg-suggestions');
+  if(!matches.length){hideSuggestions();return;}
+  box.innerHTML=matches.map(v=>`<div onclick="selectSuggestion('${v.plate}')" style="display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s;" onmouseover="this.style.background='var(--s3)'" onmouseout="this.style.background=''"><div style="font-size:18px;">🚗</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${v.make_model||'—'}</div><div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);">${v.plate}</div></div>${v.source?`<div style="font-size:10px;color:var(--text3);white-space:nowrap;">${v.source}</div>`:''}</div>`).join('');
+  box.style.display='block';
+}
 function searchReg(val) {
   val=val.trim().toUpperCase();
+  hideSuggestions();
   if(!val){document.getElementById('reg-not-found').style.display='none';document.getElementById('reg-result').style.display='none';document.getElementById('sell-form').style.display='none';return;}
   if(val.length<3){document.getElementById('reg-not-found').style.display='none';return;}
   const v=findV(val);
-  if(!v){document.getElementById('reg-not-found').style.display='block';document.getElementById('reg-result').style.display='none';document.getElementById('sell-form').style.display='none';document.getElementById('invoice-output').style.display='none';return;}
+  if(!v){
+    const matches=findPartialV(val);
+    if(matches.length){
+      const box=document.getElementById('reg-suggestions');
+      box.innerHTML=matches.map(m=>`<div onclick="selectSuggestion('${m.plate}')" style="display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s;" onmouseover="this.style.background='var(--s3)'" onmouseout="this.style.background=''"><div style="font-size:18px;">🚗</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m.make_model||'—'}</div><div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);">${m.plate}</div></div>${m.source?`<div style="font-size:10px;color:var(--text3);white-space:nowrap;">${m.source}</div>`:''}</div>`).join('');
+      box.style.display='block';
+      document.getElementById('reg-not-found').style.display='none';
+    } else {
+      document.getElementById('reg-not-found').style.display='block';
+    }
+    document.getElementById('reg-result').style.display='none';
+    document.getElementById('sell-form').style.display='none';
+    document.getElementById('invoice-output').style.display='none';
+    return;
+  }
   document.getElementById('reg-not-found').style.display='none';
   currentVehicle=v;
   document.getElementById('rr-model').textContent=v.make_model;
@@ -2098,11 +2182,23 @@ async function addVehicle(){
   } catch(e) { alert('Error adding vehicle: '+e.message); }
 }
 function handleSearch(q){
-  if(!q||q.length<2)return;
-  q=q.toLowerCase();
-  const r=stockData.find(v=>v.plate.toLowerCase().indexOf(q)>=0||v.make_model.toLowerCase().indexOf(q)>=0);
+  searchQuery = String(q||'').trim().toLowerCase();
+  if(!searchQuery || searchQuery.length < 2){
+    searchQuery = '';
+    if(document.getElementById('page-stock')?.classList.contains('active')) renderStock();
+    if(document.getElementById('page-sold')?.classList.contains('active')) renderSold();
+    return;
+  }
+  const r = stockData.find(v=>v.plate.toLowerCase().includes(searchQuery) || v.make_model.toLowerCase().includes(searchQuery));
   if(r){nav('stock',document.querySelector('[onclick*=stock]'));}
-  else{const s=APP_DATA.sold.find(v=>v.plate.toLowerCase().indexOf(q)>=0||v.make_model.toLowerCase().indexOf(q)>=0);if(s)nav('sold',document.querySelector('[onclick*=sold]'));}
+  else {
+    const s = APP_DATA.sold.find(v=>v.plate.toLowerCase().includes(searchQuery) || v.make_model.toLowerCase().includes(searchQuery));
+    if(s) nav('sold',document.querySelector('[onclick*=sold]'));
+    else {
+      if(document.getElementById('page-stock')?.classList.contains('active')) renderStock();
+      if(document.getElementById('page-sold')?.classList.contains('active')) renderSold();
+    }
+  }
 }
 function exportStock(){const rows=[['Plate','Model','Investor','Total Cost','Days','Status','Notes']];stockData.forEach(v=>rows.push([v.plate,v.make_model,v.investor,v.total_cost,v.days_in_stock,v.status,v.notes]));dlCSV(rows,'stock.csv');}
 function exportSold(){const rows=[['Month','Plate','Model','Cost','Sold','Profit','Investor']];APP_DATA.sold.forEach(v=>rows.push([v.month,v.plate,v.make_model,v.total_cost,v.sold_price,v.profit,v.investor]));dlCSV(rows,'sold.csv');}
@@ -2309,6 +2405,7 @@ function initUI() {
   renderFinance();
   renderReceipts();
   renderInvestors();
+  renderFines();
   renderWages();
   renderVAT();
   renderReports();
@@ -2369,6 +2466,7 @@ function loadFromStorage() {
 // ─────────────────────────────────────────────
 // UTILS
 // ─────────────────────────────────────────────
+let searchQuery = '';
 function atStatusLabel(s) {
   return {not_started:'Not Started',draft:'Draft',needs_review:'Needs Review',ready:'Ready',live:'Live ✓',failed:'Failed'}[s]||s;
 }
@@ -2378,10 +2476,12 @@ function updateNavBadges() {
   const ig=document.getElementById('nb-ig');
   const sold=document.getElementById('nb-sold');
   const stock=document.getElementById('nb-stock');
+  const finesBadge=document.getElementById('nb-fines');
   if(at) at.textContent = atListings.filter(l=>l.status==='draft'||l.status==='needs_review').length || '0';
   if(ig) ig.textContent = igPosts.filter(p=>p.status==='draft').length || '0';
   if(sold) sold.textContent = APP_DATA.sold.length || '0';
   if(stock) stock.textContent = stockData.length || '0';
+  if(finesBadge) finesBadge.textContent = fines.filter(f=>f.status!=='Paid').length || '0';
 }
 function setInner(id, html){ const el=document.getElementById(id); if(el) el.innerHTML = html; }
 function setText(id, text){ const el=document.getElementById(id); if(el) el.textContent = text; }
@@ -3038,10 +3138,10 @@ function refreshMediaModal() {
     `<div class="irow" style="padding:6px 0;"><span class="lbl">IG Posts</span><span class="val">${igP.length} post${igP.length!==1?'s':''} (${igP.filter(p=>p.status==='posted').length} live)</span></div>`+
     `<div class="irow" style="padding:6px 0;"><span class="lbl">Cover Photo</span><span class="val">${pics.find(p=>p.cover)?'✓ Set':'⚠️ Not set'}</span></div>`);
   setInner('media-quick-actions',
-    `<button class="btn btn-b" style="width:100%;" onclick="openATFromStock('${escJs(plate)}')">🌐 Auto Trader Listing</button>`+
-    `<button class="btn btn-amber" style="width:100%;" onclick="closeM('media');openIGFromStock('${escJs(plate)}')">📱 Post to Instagram</button>`+
-    `<button class="btn btn-g" style="width:100%;" onclick="autoOrderPhotos()">🔁 Auto Order Photos</button>`+
-    `<button class="btn btn-g" style="width:100%;" onclick="document.getElementById('media-file-input').click()">+ Add More Photos</button>`);
+    `<button class="btn btn-b" style="width:100%;" disabled title="Coming Soon">🌐 Auto Trader Listing</button>`+
+    `<button class="btn btn-amber" style="width:100%;" disabled title="Coming Soon">📱 Post to Instagram</button>`+
+    `<button class="btn btn-g" style="width:100%;" disabled title="Coming Soon">🔁 Auto Order Photos</button>`+
+    `<button class="btn btn-g" style="width:100%;" disabled title="Coming Soon">+ Add More Photos</button>`);
 }
 function renderPhotoGrid(plate) {
   const np = normP(plate);
