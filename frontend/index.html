@@ -362,7 +362,7 @@ tr:hover td{background:var(--s2);}
     <div class="sg">
       <div class="sg-lbl">Stock</div>
       <button class="ni" onclick="nav('stock',this)"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 7l9-4 9 4v10l-9 4-9-4V7z"/></svg>Current Stock<span class="nb g" id="nb-stock">29</span></button>
-      <button class="ni" onclick="nav('sold',this)"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Sold History<span class="nb g">95</span></button>
+      <button class="ni" onclick="nav('sold',this)"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Sold History<span class="nb g" id="nb-sold">0</span></button>
       <button class="ni" onclick="nav('collections',this)"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11a2 2 0 012 2v3"/><rect x="9" y="11" width="14" height="10" rx="2"/></svg>Collections &amp; Deliveries</button>
       <button class="ni" onclick="nav('servicehistory',this)"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12h6M9 16h6M9 8h6M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"/></svg>Service History</button>
       <button class="ni" onclick="nav('mot',this)"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>MOT Tracker<span class="nb r" id="nb-mot">0</span></button>
@@ -1456,7 +1456,7 @@ function renderCollections() {
   document.getElementById('col-stats').innerHTML='<div class="stat blue"><div class="sl">Incoming Cars</div><div class="sv">'+incoming.length+'</div></div><div class="stat amber"><div class="sl">Pending</div><div class="sv">'+incoming.filter(c=>c.status!=='Collected').length+'</div></div><div class="stat green"><div class="sl">Deliveries</div><div class="sv">'+outgoing.length+'</div></div><div class="stat purple"><div class="sl">Grouped Runs</div><div class="sv">'+incoming.filter(c=>(c.linked_vehicles||[]).length).length+'</div></div>';
   document.getElementById('collections-list').innerHTML=incoming.length?incoming.map(c=>'<div class="li"><div class="ldot" style="background:var(--amber)"></div><div class="lc"><div class="lt">'+c.plate+' — '+c.make_model+'</div><div class="lm">'+(c.addr||'Address needed')+' · Won '+fmtD(c.date_won)+'</div><div class="lv">Pending '+(c.days_pending||0)+' days · '+(c.distance_note||'Distance to be checked')+'</div></div><span class="badge ba">'+c.status+'</span></div>').join(''):'<div style="color:var(--text3);font-size:12px;padding:10px;">No inbound cars</div>';
   document.getElementById('deliveries-list').innerHTML=outgoing.length?outgoing.map(c=>'<div class="li"><div class="ldot" style="background:var(--blue)"></div><div class="lc"><div class="lt">'+c.plate+' — '+c.make_model+'</div><div class="lm">'+(c.addr||'Address needed')+' · '+fmtD(c.date)+'</div><div class="lv">Driver: '+(c.driver||'TBC')+'</div></div><span class="badge bb">'+c.status+'</span></div>').join(''):'<div style="color:var(--text3);font-size:12px;padding:10px;">No deliveries logged</div>';
-  const all = incoming.concat(outgoing);
+  const all = incoming.map(c=>Object.assign({},c,{type:'Incoming'})).concat(outgoing.map(c=>Object.assign({},c,{type:'Delivery'})));
   document.getElementById('col-tbody').innerHTML=all.map(c=>'<tr><td><span class="badge '+(c.type==='Incoming'?'ba':'bb')+'">'+c.type+'</span></td><td class="tdm">'+c.make_model+'</td><td><span class="mono">'+c.plate+'</span></td><td>'+(c.type==='Incoming'?fmtD(c.date_won):fmtD(c.date||c.scheduled_date))+'</td><td>'+(c.addr||'—')+'</td><td>'+(c.driver||'—')+'</td><td>'+(c.cost?fmt0(c.cost):'—')+'</td><td>'+(c.status||'Pending')+'<div style="font-size:10px;color:var(--text3);">'+(c.linked_vehicles&&c.linked_vehicles.length?'Linked: '+c.linked_vehicles.join(', '):'')+'</div></td></tr>').join('');
 }
 async function addCollection(){
@@ -2067,10 +2067,15 @@ async function importExcel(input){
     const res=await fetch('/api/excel/import',{method:'POST',body:fd});
     if(!res.ok) throw new Error(await res.text());
     const r=await res.json();
-    alert('Import complete!\n\nVehicles added: '+r.added+'\nVehicles updated: '+r.updated+'\nSkipped: '+r.skipped+'\nExpenses: '+r.expenses+'\nMoney In: '+r.moneyIn+'\nMoney Out: '+r.moneyOut+'\nCollections: '+r.collections);
+    const line = (label, a, u) => label+': '+a+' added, '+u+' updated';
+    alert('Import complete!\n\nVehicles: '+r.added+' added, '+r.updated+' updated, '+r.skipped+' skipped\nInvestors: '+(r.investorsProcessed||0)+' processed\n'+line('Expenses',r.expensesAdded,r.expensesUpdated)+'\n'+line('Money In',r.moneyInAdded,r.moneyInUpdated)+'\n'+line('Money Out',r.moneyOutAdded,r.moneyOutUpdated)+'\n'+line('Collections',r.collectionsAdded,r.collectionsUpdated));
     input.value='';
     await bootApp();
-  }catch(e){alert('Import error: '+e.message);input.value='';}
+  }catch(e){
+    let msg=e.message;
+    try{const parsed=JSON.parse(msg);if(parsed.error) msg=parsed.error;}catch(_){}
+    alert('Import error:\n\n'+msg);input.value='';
+  }
 }
 
 var currentDetailStockId = '';
@@ -2308,8 +2313,12 @@ function igStatusLabel(s) { return {draft:'Draft',scheduled:'Scheduled',posted:'
 function updateNavBadges() {
   const at=document.getElementById('nb-at');
   const ig=document.getElementById('nb-ig');
+  const sold=document.getElementById('nb-sold');
+  const stock=document.getElementById('nb-stock');
   if(at) at.textContent = atListings.filter(l=>l.status==='draft'||l.status==='needs_review').length || '0';
   if(ig) ig.textContent = igPosts.filter(p=>p.status==='draft').length || '0';
+  if(sold) sold.textContent = APP_DATA.sold.length || '0';
+  if(stock) stock.textContent = stockData.length || '0';
 }
 function setInner(id, html){ const el=document.getElementById(id); if(el) el.innerHTML = html; }
 function setText(id, text){ const el=document.getElementById(id); if(el) el.textContent = text; }

@@ -1,3 +1,12 @@
+/**
+ * DESTRUCTIVE seed script — drops ALL collections and re-imports from Excel.
+ * Use this only for dev/testing when you want a full database reset.
+ *
+ * Usage:  node scripts/seed.js
+ *
+ * For safe, idempotent seeding (skips existing data), the server runs
+ * autoSeed() automatically on startup — see backend/services/seeder.js
+ */
 import 'dotenv/config';
 import mongoose from 'mongoose';
 import path from 'path';
@@ -23,6 +32,8 @@ async function seed() {
   try {
     await mongoose.connect(process.env.MONGO_URI);
     console.log('Connected to MongoDB');
+
+    console.warn('⚠  DESTRUCTIVE RESET — dropping all collections...');
 
     // Drop all collections (idempotent)
     const collections = await mongoose.connection.db.listCollections().toArray();

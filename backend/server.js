@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import connectDB from './config/db.js';
+import { autoSeed } from './services/seeder.js';
 import errorHandler from './middleware/errorHandler.js';
 
 // Route imports
@@ -26,9 +27,6 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 5050;
-
-// Connect to MongoDB
-connectDB();
 
 // Middleware
 app.use(cors());
@@ -62,8 +60,15 @@ app.get('*', (req, res) => {
 // Error handler
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`DealerOS server running on http://localhost:${PORT}`);
-});
+// Connect to MongoDB, run safe seed, then start server
+async function start() {
+  await connectDB();
+  await autoSeed();
+  app.listen(PORT, () => {
+    console.log(`DealerOS server running on http://localhost:${PORT}`);
+  });
+}
+
+start();
 
 export default app;

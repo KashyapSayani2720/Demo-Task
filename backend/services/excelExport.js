@@ -89,9 +89,11 @@ export async function generateWorkbook() {
     { header: 'How Far?', key: 'distance_note', width: 12 },
     { header: 'Collection Date', key: 'collection_date', width: 14 },
     { header: 'Number', key: 'number', width: 10 },
-    { header: 'Additional notes', key: 'notes', width: 24 }
+    { header: 'Additional notes', key: 'notes', width: 24 },
+    { header: '_id', key: '_id', width: 10 }
   ];
-  for (const c of collections) cSheet.addRow(c);
+  cSheet.getColumn('_id').hidden = true;
+  for (const c of collections) cSheet.addRow({ ...c, _id: String(c._id) });
 
   // Investor Budget sheet
   const invData = await calculateAllInvestors(investors);
@@ -117,9 +119,11 @@ export async function generateWorkbook() {
     { header: 'Amount ', key: 'amount', width: 10 },
     { header: 'Payment Method', key: 'payment_method', width: 14 },
     { header: 'Paid By', key: 'paid_by', width: 10 },
-    { header: 'Notes', key: 'notes', width: 24 }
+    { header: 'Notes', key: 'notes', width: 24 },
+    { header: '_id', key: '_id', width: 10 }
   ];
-  for (const e of expenses) eSheet.addRow(e);
+  eSheet.getColumn('_id').hidden = true;
+  for (const e of expenses) eSheet.addRow({ ...e, _id: String(e._id) });
 
   // Money In sheet
   const miSheet = wb.addWorksheet('Money in');
@@ -129,9 +133,11 @@ export async function generateWorkbook() {
     { header: 'Category', key: 'category', width: 14 },
     { header: 'Amount ', key: 'amount', width: 10 },
     { header: 'Reg', key: 'plate', width: 12 },
-    { header: 'Notes', key: 'notes', width: 24 }
+    { header: 'Notes', key: 'notes', width: 24 },
+    { header: '_id', key: '_id', width: 10 }
   ];
-  for (const m of moneyIn) miSheet.addRow(m);
+  miSheet.getColumn('_id').hidden = true;
+  for (const m of moneyIn) miSheet.addRow({ ...m, _id: String(m._id) });
 
   // Money Out sheet
   const moSheet = wb.addWorksheet('Money Out');
@@ -140,9 +146,11 @@ export async function generateWorkbook() {
     { header: 'Date', key: 'date', width: 14 },
     { header: 'Category', key: 'category', width: 14 },
     { header: 'Amount ', key: 'amount', width: 10 },
-    { header: 'Notes', key: 'notes', width: 24 }
+    { header: 'Notes', key: 'notes', width: 24 },
+    { header: '_id', key: '_id', width: 10 }
   ];
-  for (const m of moneyOut) moSheet.addRow(m);
+  moSheet.getColumn('_id').hidden = true;
+  for (const m of moneyOut) moSheet.addRow({ ...m, _id: String(m._id) });
 
   return wb;
 }

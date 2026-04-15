@@ -10,14 +10,46 @@ const DEFAULT_INVESTOR_SPLIT = 0.5;
 function cellVal(v) {
   if (v == null) return null;
   if (typeof v === 'object' && !(v instanceof Date)) {
-    // Formula cell: { formula: '...', result: N }
     if ('result' in v) return v.result;
-    // Shared formula
     if ('sharedFormula' in v) return v.result ?? null;
     return null;
   }
   return v;
 }
+
+/**
+ * Find a worksheet by name with normalized matching.
+ * Handles differences in casing, spaces vs underscores/hyphens.
+ * e.g. 'Money_in', 'Money in', 'Money In', 'money-in' all match.
+ */
+function findSheet(wb, ...names) {
+  const norm = s => s.toLowerCase().replace(/[\s_\-]+/g, '');
+  const targets = names.map(norm);
+  // Exact match first (fast path)
+  for (const name of names) {
+    const ws = wb.getWorksheet(name);
+    if (ws) return ws;
+  }
+  // Normalized match across all worksheets
+  for (const ws of wb.worksheets) {
+    if (targets.includes(norm(ws.name))) return ws;
+  }
+  return null;
+}
+
+/**
+ * Get a value from a row object by trying multiple possible header names.
+ * Returns the first non-empty match, or null.
+ */
+function getField(row, ...keys) {
+  for (const k of keys) {
+    if (row[k] != null && row[k] !== '') return row[k];
+  }
+  return null;
+}
+
+// Common header aliases for plate/registration fields
+const PLATE_HEADERS = ['Number Plate reference', 'Plate Number', 'Number Plate', 'Plate', 'Reg', 'Registration'];
 
 /**
  * Read a worksheet into an array of objects using the header row.
@@ -50,17 +82,37 @@ function sheetToObjects(ws, headerRow = 1) {
 }
 
 /**
+ * Auto-detect which row contains headers by looking for any of the known column names.
+ * Original external Excel files have a title on row 1 and headers on row 2.
+ * App-exported files have headers directly on row 1.
+ */
+function detectHeaderRow(ws, ...knownHeaders) {
+  const targets = knownHeaders.map(h => h.toLowerCase());
+  for (let r = 1; r <= 2; r++) {
+    const row = ws.getRow(r);
+    let found = false;
+    row.eachCell({ includeEmpty: false }, (cell) => {
+      if (targets.includes(normalizeString(cell.value).toLowerCase())) found = true;
+    });
+    if (found) return r;
+  }
+  return 2; // fallback to original layout
+}
+
+/**
  * Import Sold Stock sheet -> vehicle documents
  */
 export function importSoldStock(ws) {
-  const rows = sheetToObjects(ws, 2); // headers on row 2
+  const headerRow = detectHeaderRow(ws, ...PLATE_HEADERS, 'Make & Model');
+  const rows = sheetToObjects(ws, headerRow);
   return rows
-    .filter(r => r['Number Plate reference'])
+    .filter(r => getField(r, ...PLATE_HEADERS))
     .map(r => {
-      const profit = normalizeAmount(r['Total Profit']);
-      const investor = normalizeString(r['SA/Investor Name']);
-      let investor_profit = normalizeAmount(r['Investor Profit']);
-      let mp_profit = normalizeAmount(r['SA Profit']);
+      const plateRaw = getField(r, ...PLATE_HEADERS);
+      const profit = normalizeAmount(getField(r, 'Total Profit', 'Profit'));
+      const investor = normalizeString(getField(r, 'SA/Investor Name', 'Investor', 'Investor/SA'));
+      let investor_profit = normalizeAmount(getField(r, 'Investor Profit'));
+      let mp_profit = normalizeAmount(getField(r, 'SA Profit'));
 
       // Apply default 50/50 split if Excel doesn't have explicit values
       if (investor && profit !== 0 && investor_profit === 0 && mp_profit === 0) {
@@ -69,30 +121,30 @@ export function importSoldStock(ws) {
       }
 
       return {
-        plate: normalizePlate(r['Number Plate reference']),
-        make_model: normalizeString(r['Make & Model']),
-        month: normalizeMonth(r['Month']),
-        date_acquired: normalizeDate(r['Date Aquired']),
-        source: '',
+        plate: normalizePlate(plateRaw),
+        make_model: normalizeString(getField(r, 'Make & Model', 'Make and Model', 'Vehicle')),
+        month: normalizeMonth(getField(r, 'Month')),
+        date_acquired: normalizeDate(getField(r, 'Date Aquired', 'Date Acquired', 'Date')),
+        source: normalizeString(getField(r, 'Source')) || '',
         investor,
-        purchase_price: 0,
-        recon_cost: 0,
-        px_value: normalizeAmount(r['Part Ex']),
-        total_cost: normalizeAmount(r['Total Cost']),
+        purchase_price: normalizeAmount(getField(r, 'Purchase Price', 'Price')),
+        recon_cost: normalizeAmount(getField(r, 'Reconditioning costs', 'Recon Cost', 'Recon')),
+        px_value: normalizeAmount(getField(r, 'Part Ex', 'PX Value', 'Part Exchange')),
+        total_cost: normalizeAmount(getField(r, 'Total Cost')),
         status: 'Sold',
-        sold_price: normalizeAmount(r['Sold']),
+        sold_price: normalizeAmount(getField(r, 'Sold', 'Sold Price')),
         profit,
-        profit_share: normalizeString(r['SA/Investor Profit Share']),
+        profit_share: normalizeString(getField(r, 'SA/Investor Profit Share', 'Profit Share')),
         investor_profit,
         mp_profit,
-        date_listed: normalizeDate(r['Date Listed']),
-        date_sold: normalizeDate(r['Date Sold']),
-        platform: normalizeString(r['Platfrom']),
-        customer_name: normalizeString(r['Customer Name']),
-        contact_info: normalizeString(r['Contact info']),
-        warranty: normalizeString(r['Warranty']),
-        invoice_number: normalizeString(r['Invoice Number']),
-        autoguard: normalizeString(r['AutoGuard Number']),
+        date_listed: normalizeDate(getField(r, 'Date Listed')),
+        date_sold: normalizeDate(getField(r, 'Date Sold')),
+        platform: normalizeString(getField(r, 'Platfrom', 'Platform')),
+        customer_name: normalizeString(getField(r, 'Customer Name')),
+        contact_info: normalizeString(getField(r, 'Contact info', 'Contact Info')),
+        warranty: normalizeString(getField(r, 'Warranty')),
+        invoice_number: normalizeString(getField(r, 'Invoice Number')),
+        autoguard: normalizeString(getField(r, 'AutoGuard Number', 'Autoguard')),
         notes: ''
       };
     });
@@ -102,24 +154,26 @@ export function importSoldStock(ws) {
  * Import Stock Data sheet -> vehicle documents
  */
 export function importStockData(ws) {
-  const rows = sheetToObjects(ws, 2); // headers on row 2
+  const headerRow = detectHeaderRow(ws, ...PLATE_HEADERS, 'Make & Model');
+  const rows = sheetToObjects(ws, headerRow);
   return rows
-    .filter(r => r['Plate Number'])
+    .filter(r => getField(r, ...PLATE_HEADERS))
     .map(r => {
-      const price = normalizeAmount(r['Price']);
-      const recon = normalizeAmount(r['Reconditioning costs']);
-      const totalCostRaw = normalizeAmount(r['Total Cost']);
+      const plateRaw = getField(r, ...PLATE_HEADERS);
+      const price = normalizeAmount(getField(r, 'Price', 'Purchase Price'));
+      const recon = normalizeAmount(getField(r, 'Reconditioning costs', 'Recon Cost', 'Recon'));
+      const totalCostRaw = normalizeAmount(getField(r, 'Total Cost'));
       // Total Cost is a formula (SUM of Price + Recon). Use result if available, else compute.
       const total_cost = totalCostRaw > 0 ? totalCostRaw : price + recon;
-      const soldVal = r['Sold'];
+      const soldVal = getField(r, 'Sold', 'Sold Price');
       const isSold = soldVal && soldVal !== '-' && normalizeAmount(soldVal) > 0;
 
       const VALID_STATUSES = ['In Stock', 'Live', 'Reserved', 'Sold', 'Delivered', 'SOR', 'Trade'];
-      const rawStatus = normalizeString(r['Status']);
+      const rawStatus = normalizeString(getField(r, 'Status'));
       const isValidStatus = VALID_STATUSES.includes(rawStatus);
 
-      const profit = normalizeAmount(r['Profit']);
-      const investor = normalizeString(r['Investor/SA']);
+      const profit = normalizeAmount(getField(r, 'Profit', 'Total Profit'));
+      const investor = normalizeString(getField(r, 'Investor/SA', 'SA/Investor Name', 'Investor'));
       let investor_profit = 0;
       let mp_profit = 0;
 
@@ -133,15 +187,15 @@ export function importStockData(ws) {
       }
 
       return {
-        plate: normalizePlate(r['Plate Number']),
-        make_model: normalizeString(r['Make & Model']),
-        month: normalizeMonth(r['Month']),
-        date_acquired: normalizeDate(r['Date Aquired']),
-        source: normalizeString(r['Source']),
+        plate: normalizePlate(plateRaw),
+        make_model: normalizeString(getField(r, 'Make & Model', 'Make and Model', 'Vehicle')),
+        month: normalizeMonth(getField(r, 'Month')),
+        date_acquired: normalizeDate(getField(r, 'Date Aquired', 'Date Acquired', 'Date')),
+        source: normalizeString(getField(r, 'Source')) || '',
         investor,
         purchase_price: price,
         recon_cost: recon,
-        px_value: normalizeAmount(r['PX Value']),
+        px_value: normalizeAmount(getField(r, 'PX Value', 'Part Ex', 'Part Exchange')),
         total_cost,
         status: isSold ? 'Sold' : (isValidStatus ? rawStatus : 'In Stock'),
         sold_price: isSold ? normalizeAmount(soldVal) : 0,
@@ -157,35 +211,42 @@ export function importStockData(ws) {
  * Import Collection sheet
  */
 export function importCollections(ws) {
-  const rows = sheetToObjects(ws, 1);
+  const headerRow = detectHeaderRow(ws, ...PLATE_HEADERS, 'Make & Model', 'Source');
+  const rows = sheetToObjects(ws, headerRow);
   return rows
-    .filter(r => r['Plate Number'] || r['Make & Model'])
-    .map(r => ({
-      plate: normalizePlate(r['Plate Number']),
-      make_model: normalizeString(r['Make & Model']),
-      source: normalizeString(r['Source']),
-      date_won: normalizeDate(r['Date Won']),
-      collection_date: normalizeDate(r['Collection Date']),
-      address: normalizeString(r['Location']),
-      postcode: normalizeString(r['Post Code']),
-      distance_note: normalizeString(r['How Far?']),
-      number: normalizeString(r['Number']),
-      notes: normalizeString(r['Additional notes']),
-      status: 'Pending'
-    }));
+    .filter(r => getField(r, ...PLATE_HEADERS) || getField(r, 'Make & Model', 'Make and Model'))
+    .map(r => {
+      const obj = {
+        plate: normalizePlate(getField(r, ...PLATE_HEADERS)),
+        make_model: normalizeString(getField(r, 'Make & Model', 'Make and Model')),
+        source: normalizeString(getField(r, 'Source')),
+        date_won: normalizeDate(getField(r, 'Date Won')),
+        collection_date: normalizeDate(getField(r, 'Collection Date')),
+        address: normalizeString(getField(r, 'Location', 'Address')),
+        postcode: normalizeString(getField(r, 'Post Code', 'Postcode')),
+        distance_note: normalizeString(getField(r, 'How Far?', 'Distance')),
+        number: normalizeString(getField(r, 'Number')),
+        notes: normalizeString(getField(r, 'Additional notes', 'Notes')),
+        status: 'Pending'
+      };
+      const id = normalizeString(getField(r, '_id'));
+      if (id) obj._id = id;
+      return obj;
+    });
 }
 
 /**
  * Import Investor Budget sheet
  */
 export function importInvestors(ws) {
-  const rows = sheetToObjects(ws, 1);
+  const headerRow = detectHeaderRow(ws, 'Investors', 'Investor', 'Name');
+  const rows = sheetToObjects(ws, headerRow);
   return rows
-    .filter(r => r['Investors'])
+    .filter(r => getField(r, 'Investors', 'Investor', 'Name'))
     .map(r => ({
-      name: normalizeString(r['Investors']),
-      initial_balance: normalizeAmount(r['Initial Balance']),
-      capital_returned: normalizeAmount(r['Capital Returned'])
+      name: normalizeString(getField(r, 'Investors', 'Investor', 'Name')),
+      initial_balance: normalizeAmount(getField(r, 'Initial Balance')),
+      capital_returned: normalizeAmount(getField(r, 'Capital Returned'))
     }));
 }
 
@@ -194,16 +255,21 @@ export function importInvestors(ws) {
  */
 export function importExpenses(ws) {
   const rows = sheetToObjects(ws, 1);
-  return rows.map(r => ({
-    month: normalizeMonth(r['Month']),
-    date: normalizeDate(r['Date']),
-    category: normalizeString(r['Category']),
-    from: normalizeString(r['From']),
-    amount: normalizeAmount(r['Amount'] || r['Amount ']), // header has trailing space
-    payment_method: normalizeString(r['Payment Method']),
-    paid_by: normalizeString(r['Paid By']),
-    notes: normalizeString(r['Notes'])
-  }));
+  return rows.map(r => {
+    const obj = {
+      month: normalizeMonth(r['Month']),
+      date: normalizeDate(r['Date']),
+      category: normalizeString(r['Category']),
+      from: normalizeString(r['From']),
+      amount: normalizeAmount(r['Amount'] || r['Amount ']), // header has trailing space
+      payment_method: normalizeString(r['Payment Method']),
+      paid_by: normalizeString(r['Paid By']),
+      notes: normalizeString(r['Notes'])
+    };
+    const id = normalizeString(r['_id']);
+    if (id) obj._id = id;
+    return obj;
+  });
 }
 
 /**
@@ -263,14 +329,19 @@ export function importCashSpending(ws) {
  */
 export function importMoneyIn(ws) {
   const rows = sheetToObjects(ws, 1);
-  return rows.map(r => ({
-    month: normalizeMonth(r['Month']),
-    date: normalizeDate(r['Date']),
-    category: normalizeString(r['Category']),
-    amount: normalizeAmount(r['Amount'] || r['Amount ']),
-    plate: normalizePlate(r['Reg']),
-    notes: normalizeString(r['Notes'])
-  }));
+  return rows.map(r => {
+    const obj = {
+      month: normalizeMonth(getField(r, 'Month')),
+      date: normalizeDate(getField(r, 'Date')),
+      category: normalizeString(getField(r, 'Category')),
+      amount: normalizeAmount(getField(r, 'Amount', 'Amount ')),
+      plate: normalizePlate(getField(r, 'Reg', ...PLATE_HEADERS)),
+      notes: normalizeString(getField(r, 'Notes'))
+    };
+    const id = normalizeString(getField(r, '_id'));
+    if (id) obj._id = id;
+    return obj;
+  });
 }
 
 /**
@@ -278,13 +349,18 @@ export function importMoneyIn(ws) {
  */
 export function importMoneyOut(ws) {
   const rows = sheetToObjects(ws, 1);
-  return rows.map(r => ({
-    month: normalizeMonth(r['Month']),
-    date: normalizeDate(r['Date']),
-    category: normalizeString(r['Category']),
-    amount: normalizeAmount(r['Amount'] || r['Amount ']),
-    notes: normalizeString(r['Notes'])
-  }));
+  return rows.map(r => {
+    const obj = {
+      month: normalizeMonth(getField(r, 'Month')),
+      date: normalizeDate(getField(r, 'Date')),
+      category: normalizeString(getField(r, 'Category')),
+      amount: normalizeAmount(getField(r, 'Amount', 'Amount ')),
+      notes: normalizeString(getField(r, 'Notes'))
+    };
+    const id = normalizeString(getField(r, '_id'));
+    if (id) obj._id = id;
+    return obj;
+  });
 }
 
 /**
@@ -294,20 +370,59 @@ export async function parseWorkbook(filePath) {
   const wb = new ExcelJS.Workbook();
   await wb.xlsx.readFile(filePath);
 
-  const get = (name) => wb.getWorksheet(name);
+  const sheetNames = wb.worksheets.map(ws => ws.name);
+  console.log('[Excel Import] Sheets in workbook:', sheetNames);
 
-  return {
-    soldStock: get('Sold Stock') ? importSoldStock(get('Sold Stock')) : [],
-    stockData: get('Stock Data') ? importStockData(get('Stock Data')) : [],
-    collections: get('Collection') ? importCollections(get('Collection')) : [],
-    investors: get('Investor Budget') ? importInvestors(get('Investor Budget')) : [],
+  const find = (...names) => findSheet(wb, ...names);
+
+  const soldStockWs = find('Sold Stock');
+  const stockDataWs = find('Stock Data');
+  const collectionWs = find('Collection', 'Collections');
+  const investorWs = find('Investor Budget', 'Investors');
+  const expenseWs = find('Expense', 'Expenses');
+  const fuelExpenseWs = find('Fuel Expense');
+  const investorCarExpenseWs = find('Investor Car Expense');
+  const cashSpendingWs = find('Cash Spending');
+  const moneyInWs = find('Money in', 'Money In');
+  const moneyOutWs = find('Money Out');
+
+  console.log('[Excel Import] Sheet matches:', {
+    soldStock: soldStockWs?.name || 'NOT FOUND',
+    stockData: stockDataWs?.name || 'NOT FOUND',
+    collection: collectionWs?.name || 'NOT FOUND',
+    investor: investorWs?.name || 'NOT FOUND',
+    expense: expenseWs?.name || 'NOT FOUND',
+    fuelExpense: fuelExpenseWs?.name || 'NOT FOUND',
+    investorCarExpense: investorCarExpenseWs?.name || 'NOT FOUND',
+    cashSpending: cashSpendingWs?.name || 'NOT FOUND',
+    moneyIn: moneyInWs?.name || 'NOT FOUND',
+    moneyOut: moneyOutWs?.name || 'NOT FOUND'
+  });
+
+  const result = {
+    soldStock: soldStockWs ? importSoldStock(soldStockWs) : [],
+    stockData: stockDataWs ? importStockData(stockDataWs) : [],
+    collections: collectionWs ? importCollections(collectionWs) : [],
+    investors: investorWs ? importInvestors(investorWs) : [],
     expenses: [
-      ...(get('Expense') ? importExpenses(get('Expense')) : []),
-      ...(get('Fuel Expense') ? importFuelExpenses(get('Fuel Expense')) : []),
-      ...(get('Investor Car Expense') ? importInvestorCarExpenses(get('Investor Car Expense')) : []),
-      ...(get('Cash Spending') ? importCashSpending(get('Cash Spending')) : [])
+      ...(expenseWs ? importExpenses(expenseWs) : []),
+      ...(fuelExpenseWs ? importFuelExpenses(fuelExpenseWs) : []),
+      ...(investorCarExpenseWs ? importInvestorCarExpenses(investorCarExpenseWs) : []),
+      ...(cashSpendingWs ? importCashSpending(cashSpendingWs) : [])
     ],
-    moneyIn: get('Money in') ? importMoneyIn(get('Money in')) : [],
-    moneyOut: get('Money Out') ? importMoneyOut(get('Money Out')) : []
+    moneyIn: moneyInWs ? importMoneyIn(moneyInWs) : [],
+    moneyOut: moneyOutWs ? importMoneyOut(moneyOutWs) : []
   };
+
+  console.log('[Excel Import] Parsed counts:', {
+    soldStock: result.soldStock.length,
+    stockData: result.stockData.length,
+    collections: result.collections.length,
+    investors: result.investors.length,
+    expenses: result.expenses.length,
+    moneyIn: result.moneyIn.length,
+    moneyOut: result.moneyOut.length
+  });
+
+  return result;
 }
