@@ -161,7 +161,7 @@ tr:hover td{background:var(--s2);}
 .fi-reg{font-family:'DM Mono',monospace;font-size:18px;letter-spacing:2px;text-transform:uppercase;font-weight:700;}
 
 /* ── CHARTS ── */
-.chart-wrap{display:flex;align-items:flex-end;gap:4px;height:100px;margin-top:8px;}
+.chart-wrap{display:flex;align-items:flex-end;gap:4px;height:130px;margin-top:8px;}
 .bc2{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;}
 .bar{width:100%;border-radius:3px 3px 0 0;min-height:3px;}
 .blbl{font-size:8px;color:var(--text3);text-align:center;white-space:nowrap;}
@@ -1381,12 +1381,9 @@ function nav(id, el) {
   const titles = {dashboard:'Dashboard',stock:'Current Stock',sold:'Sold History',collections:'Collections & Deliveries',servicehistory:'Service Invoices',mot:'MOT Tracker',insurance:'Insurance & SORN',viewings:'Viewings',sellcar:'Sell a Car',tasks:'Tasks',fines:'Fines & Penalties',expenses:'Finance Log',receipts:'Receipts & AI Scan',banking:'Banking',invoices:'Investor Invoices',investors:'Investor Ledger',wages:'Staff & Wages',vat:'VAT Tracker',reports:'Reports & Analytics',autotrader:'Auto Trader',instagram:'Instagram'};
   document.getElementById('tb-title').textContent = titles[id]||id;
   closeSB(); window.scrollTo(0,0);
-  if (COMING_SOON_PAGES.has(id) && page && !page.dataset.csBannerAdded) {
-    const banner = document.createElement('div');
-    banner.className = 'cs-banner';
-    banner.innerHTML = '<div class="cs-banner-icon">🚧</div><div class="cs-banner-body"><div class="cs-banner-title">Coming Soon</div><div class="cs-banner-sub">This module is under development and will be available soon. Existing data below is preserved and ready for when this feature goes live.</div></div><div class="cs-banner-pill">In Development</div>';
-    page.insertBefore(banner, page.firstChild);
-    page.dataset.csBannerAdded = '1';
+  if (COMING_SOON_PAGES.has(id) && page) {
+    page.innerHTML = '<div class="coming-soon-msg" style="min-height:calc(100vh - 120px);"><div class="cs-icon">🚧</div><div class="cs-title">Coming Soon</div><div class="cs-desc">This feature is under development.</div></div>';
+    return;
   }
   const fns = {stock:renderStock,sold:renderSold,expenses:renderFinance,investors:renderInvestors,reports:renderReports,tasks:renderTasks,mot:renderMOT,insurance:renderInsurance,viewings:renderViewings,fines:renderFines,receipts:renderReceipts,banking:renderBanking,wages:renderWages,vat:renderVAT,collections:renderCollections,invoices:renderInvoiceList,servicehistory:renderServiceHistory,autotrader:renderAutoTrader,instagram:renderInstagram};
   if (fns[id]) fns[id]();
