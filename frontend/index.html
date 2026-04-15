@@ -117,6 +117,19 @@ tr:hover td{background:var(--s2);}
 .tabs{display:flex;gap:2px;background:var(--s2);border-radius:var(--rs);padding:3px;margin-bottom:13px;overflow-x:auto;flex-shrink:0;}
 .tab{padding:5px 11px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text3);white-space:nowrap;transition:all .12s;border:none;background:none;font-family:inherit;}
 .tab.active{background:var(--s1);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.4);}
+.tab .cs-badge{font-size:8px;background:var(--amber);color:#000;padding:1px 5px;border-radius:8px;margin-left:5px;font-weight:700;letter-spacing:.3px;vertical-align:middle;}
+.coming-soon-msg{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;color:var(--text3);text-align:center;}
+.coming-soon-msg .cs-icon{font-size:38px;margin-bottom:12px;}
+.coming-soon-msg .cs-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;}
+.coming-soon-msg .cs-desc{font-size:12px;color:var(--text3);}
+/* ── COMING SOON BANNER ── */
+.cs-banner{display:flex;align-items:center;gap:14px;background:linear-gradient(135deg,rgba(227,28,28,.08),rgba(167,139,250,.08));border:1px solid rgba(227,28,28,.2);border-radius:var(--r);padding:16px 20px;margin-bottom:16px;position:relative;overflow:hidden;}
+.cs-banner::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--purple));}
+.cs-banner-icon{font-size:32px;flex-shrink:0;opacity:.85;}
+.cs-banner-body{flex:1;}
+.cs-banner-title{font-size:14px;font-weight:800;color:var(--text);letter-spacing:-.2px;margin-bottom:3px;}
+.cs-banner-sub{font-size:12px;color:var(--text2);line-height:1.5;}
+.cs-banner-pill{background:linear-gradient(135deg,var(--accent),var(--purple));color:#fff;font-size:9.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:4px 10px;border-radius:20px;flex-shrink:0;}
 .div{height:1px;background:var(--border);margin:11px 0;}
 .aip{background:linear-gradient(135deg,rgba(227,28,28,.06),rgba(167,139,250,.06));border:1px solid rgba(227,28,28,.14);border-radius:var(--r);padding:12px;margin-bottom:12px;}
 .ailabel{display:flex;align-items:center;gap:5px;font-size:9.5px;font-weight:800;color:var(--accent2);text-transform:uppercase;letter-spacing:.7px;margin-bottom:5px;}
@@ -182,7 +195,7 @@ tr:hover td{background:var(--s2);}
 .fin-row{display:flex;align-items:center;gap:9px;padding:8px 11px;border-bottom:1px solid var(--border);font-size:12px;}
 .fin-row:hover{background:var(--s2);}
 .fin-date{font-family:'DM Mono',monospace;font-size:10.5px;color:var(--text3);width:72px;flex-shrink:0;}
-.fin-plate{font-family:'DM Mono',monospace;font-size:10.5px;color:var(--blue2);width:84px;flex-shrink:0;}
+.fin-plate{font-family:'DM Mono',monospace;font-size:10.5px;color:var(--blue2);width:84px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .fin-desc{flex:1;color:var(--text);}
 .fin-amt{font-family:'DM Mono',monospace;font-size:12.5px;font-weight:700;width:82px;text-align:right;flex-shrink:0;}
 
@@ -453,10 +466,10 @@ tr:hover td{background:var(--s2);}
     </div>
     <div class="tabs">
       <button class="tab active" onclick="filterStock('all',this)">All</button>
-      <button class="tab" onclick="filterStock('website',this)">Website</button>
-      <button class="tab" onclick="filterStock('autotrader',this)">Auto Trader</button>
-      <button class="tab" onclick="filterStock('needs',this)">Needs work</button>
-      <button class="tab" onclick="filterStock('ready',this)">Ready</button>
+      <button class="tab" onclick="showComingSoon(this)">Website<span class="cs-badge">SOON</span></button>
+      <button class="tab" onclick="showComingSoon(this)">Auto Trader<span class="cs-badge">SOON</span></button>
+      <button class="tab" onclick="showComingSoon(this)">Needs work<span class="cs-badge">SOON</span></button>
+      <button class="tab" onclick="showComingSoon(this)">Ready<span class="cs-badge">SOON</span></button>
     </div>
     <div class="card"><div class="tw"><table>
       <thead><tr><th>Vehicle</th><th>Plate</th><th>Source</th><th>Investor</th><th>Total Cost</th><th>Days</th><th>Website</th><th>Auto Trader</th><th>Left to do</th><th>Actions</th></tr></thead>
@@ -522,7 +535,6 @@ tr:hover td{background:var(--s2);}
 
   <!-- ═══ INSURANCE ═══ -->
   <div class="page" id="page-insurance">
-    <div style="background:var(--amber);color:#000;padding:10px 16px;border-radius:var(--r);margin-bottom:13px;font-size:12px;font-weight:600;">Phase 2 — This module uses local data only. Full backend integration coming soon.</div>
     <div class="sh"><div class="stitle">Insurance &amp; SORN Check</div><select class="fi" style="width:auto;padding:4px 8px;font-size:11px;" id="ins-filter" onchange="renderInsurance()"><option value="current">Current stock</option><option value="inbound">Inbound</option><option value="sold">Sold</option><option value="all">All</option></select></div>
     <div class="aip">
       <div class="ailabel">🛡️ MIB Vehicle Check</div>
@@ -580,7 +592,7 @@ tr:hover td{background:var(--s2);}
     <div class="card" style="margin-bottom:13px;">
       <div class="ch"><div class="ct">Step 1 — Find Vehicle</div></div>
       <div style="display:flex;gap:8px;margin-bottom:13px;">
-        <input class="fi fi-reg" id="sell-reg" placeholder="Enter Reg Plate..." oninput="searchReg(this.value)" style="max-width:230px;font-size:17px;">
+        <input class="fi fi-reg" id="sell-reg" placeholder="Enter Reg Plate..." onkeydown="if(event.key==='Enter')searchReg(this.value)" style="max-width:230px;font-size:17px;">
         <button class="btn btn-p" onclick="searchReg(document.getElementById('sell-reg').value)">Find</button>
       </div>
       <div style="display:none;padding:12px;background:rgba(239,68,68,.1);border:1px solid var(--red);border-radius:var(--rs);margin-bottom:13px;font-size:13px;color:var(--red);" id="reg-not-found">Vehicle not found. Check the reg plate and try again.</div>
@@ -601,15 +613,15 @@ tr:hover td{background:var(--s2);}
     <div class="card" style="margin-bottom:13px;display:none;" id="sell-form">
       <div class="ch"><div class="ct">Step 2 — Sale Details</div></div>
       <div class="g2">
-        <div class="fg"><label class="fl">Sale Price (£)</label><input class="fi" id="sell-price" type="number" placeholder="e.g. 12050" oninput="updateCalc()"></div>
-        <div class="fg"><label class="fl">Investor</label><select class="fs" id="sell-investor"><option>MP</option><option>James</option><option>Daniel</option><option>Joseph</option><option>Jeff</option><option>Adam</option><option>Anthony</option><option>Leonardo</option></select></div>
+        <div class="fg"><label class="fl">Sale Price (£) <span style="color:var(--red)">*</span></label><input class="fi" id="sell-price" type="number" placeholder="e.g. 12050" oninput="updateCalc();clearFieldErr('sell-price-err','sell-price')"><span id="sell-price-err" style="display:none;color:var(--red);font-size:11.5px;margin-top:4px;">Sale price is required.</span></div>
+        <div class="fg"><label class="fl">Investor</label><select class="fs" id="sell-investor"></select></div>
       </div>
       <div class="g2">
-        <div class="fg"><label class="fl">Customer Name</label><input class="fi" id="sell-customer" placeholder="Customer full name"></div>
-        <div class="fg"><label class="fl">Customer Phone</label><input class="fi" id="sell-phone" placeholder="07xxx xxxxxx"></div>
+        <div class="fg"><label class="fl">Customer Name <span style="color:var(--red)">*</span></label><input class="fi" id="sell-customer" placeholder="Customer full name" oninput="clearFieldErr('sell-customer-err','sell-customer')"><span id="sell-customer-err" style="display:none;color:var(--red);font-size:11.5px;margin-top:4px;">Customer name is required.</span></div>
+        <div class="fg"><label class="fl">Customer Phone <span style="color:var(--red)">*</span></label><input class="fi" id="sell-phone" placeholder="07xxx xxxxxx" oninput="validateSellPhone(this)"><span id="sell-phone-err" style="display:none;color:var(--red);font-size:11.5px;margin-top:4px;">Phone is required and must be a valid number.</span></div>
       </div>
       <div class="g2">
-        <div class="fg"><label class="fl">Investor Share %</label><select class="fs" id="sell-share" onchange="updateCalc()"><option value="30">30%</option><option value="40">40%</option><option value="50">50%</option><option value="25">25%</option><option value="20">20%</option><option value="0">0% (MP Only)</option></select></div>
+        <div class="fg"><label class="fl">Investor Share %</label><select class="fs" id="sell-share" onchange="updateCalc()"><option value="30">30%</option><option value="40">40%</option><option value="50">50%</option><option value="25">25%</option><option value="20">20%</option><option value="0">0% (SA Only)</option></select></div>
         <div class="fg"><label class="fl">Sale Date</label><input class="fi" type="date" id="sell-date"></div>
       </div>
       <div class="g2">
@@ -686,7 +698,6 @@ tr:hover td{background:var(--s2);}
 
   <!-- ═══ RECEIPTS ═══ -->
   <div class="page" id="page-receipts">
-    <div style="background:var(--amber);color:#000;padding:10px 16px;border-radius:var(--r);margin-bottom:13px;font-size:12px;font-weight:600;">Phase 2 — This module uses local data only. Full backend integration coming soon.</div>
     <div class="sh"><div class="stitle">Receipts &amp; AI Scan</div><button class="btn btn-p btn-sm" onclick="openM('addreceipt')">📷 Add Receipt</button></div>
     <div class="aip"><div class="ailabel">📷 AI Receipt Scanner</div><div class="aitext">Take a photo of any receipt — petrol, parts, repairs, MOT, etc. Enter the vehicle reg and category. The AI reads the receipt and automatically extracts the amount, supplier, and date, then adds it to that car's costs and the finance log. All receipts are stored here for reference.</div></div>
     <div class="g4" style="margin-bottom:13px;" id="receipt-stats"></div>
@@ -761,7 +772,6 @@ tr:hover td{background:var(--s2);}
 
   <!-- ═══ INVESTOR INVOICES ═══ -->
   <div class="page" id="page-invoices">
-    <div style="background:var(--amber);color:#000;padding:10px 16px;border-radius:var(--r);margin-bottom:13px;font-size:12px;font-weight:600;">Phase 2 — This module uses local data only. Full backend integration coming soon.</div>
     <div class="sh"><div class="stitle">Investor Invoices</div><button class="btn btn-p btn-sm" onclick="nav('sellcar',document.querySelector('[onclick*=sellcar]'))">🔑 Sell a Car</button></div>
     <div class="card"><div id="inv-list"><div style="color:var(--text3);font-size:13px;text-align:center;padding:22px;">No invoices yet — use <strong>Sell a Car</strong> to generate your first one.</div></div></div>
   </div>
@@ -783,7 +793,6 @@ tr:hover td{background:var(--s2);}
 
   <!-- ═══ WAGES ═══ -->
   <div class="page" id="page-wages">
-    <div style="background:var(--amber);color:#000;padding:10px 16px;border-radius:var(--r);margin-bottom:13px;font-size:12px;font-weight:600;">Phase 2 — This module uses local data only. Full backend integration coming soon.</div>
     <div class="sh"><div class="stitle">Staff &amp; Wages</div><button class="btn btn-p btn-sm" onclick="openM('addstaff')">+ Add Staff</button></div>
     <div class="g4" style="margin-bottom:13px;" id="wage-stats"></div>
     <div class="gauto" id="staff-grid" style="margin-bottom:13px;"></div>
@@ -798,7 +807,6 @@ tr:hover td{background:var(--s2);}
 
   <!-- ═══ VAT ═══ -->
   <div class="page" id="page-vat">
-    <div style="background:var(--amber);color:#000;padding:10px 16px;border-radius:var(--r);margin-bottom:13px;font-size:12px;font-weight:600;">Phase 2 — This module uses local data only. Full backend integration coming soon.</div>
     <div class="sh"><div class="stitle">VAT Tracker</div></div>
     <div class="aip"><div class="ailabel">📋 VAT Manager</div><div class="aitext">VAT is automatically tracked from all sales invoices and purchase records. The quarter summary shows VAT collected on sales, VAT paid on purchases (input tax), and the net VAT owed to HMRC. Always review with your accountant before submitting.</div></div>
     <div class="g4" style="margin-bottom:13px;" id="vat-stats"></div>
@@ -820,7 +828,6 @@ tr:hover td{background:var(--s2);}
 
   <!-- ═══ REPORTS ═══ -->
   <div class="page" id="page-reports">
-    <div style="background:var(--amber);color:#000;padding:10px 16px;border-radius:var(--r);margin-bottom:13px;font-size:12px;font-weight:600;">Phase 2 — This module uses local data only. Full backend integration coming soon.</div>
     <div class="sh"><div class="stitle">Reports &amp; Analytics</div><select class="fi" style="width:auto;padding:5px 9px;font-size:11.5px;" id="report-month" onchange="renderReports()"><option value="all">All Time</option></select></div>
     <div class="aip" id="report-ai"></div>
     <div class="g5" style="margin-bottom:13px;" id="report-kpis"></div>
@@ -836,7 +843,6 @@ tr:hover td{background:var(--s2);}
 
   <!-- ═══ AUTO TRADER ═══ -->
   <div class="page" id="page-autotrader">
-    <div style="background:var(--amber);color:#000;padding:10px 16px;border-radius:var(--r);margin-bottom:13px;font-size:12px;font-weight:600;">Phase 2 — This module uses local data only. Full backend integration coming soon.</div>
     <div class="sh">
       <div class="stitle">Auto Trader <span style="font-size:11px;color:var(--text3);font-weight:400;" id="at-conn-label"></span></div>
       <div style="display:flex;gap:7px;flex-wrap:wrap;">
@@ -858,7 +864,6 @@ tr:hover td{background:var(--s2);}
 
   <!-- ═══ INSTAGRAM ═══ -->
   <div class="page" id="page-instagram">
-    <div style="background:var(--amber);color:#000;padding:10px 16px;border-radius:var(--r);margin-bottom:13px;font-size:12px;font-weight:600;">Phase 2 — This module uses local data only. Full backend integration coming soon.</div>
     <div class="sh">
       <div class="stitle">Instagram <span style="font-size:11px;color:var(--text3);font-weight:400;" id="ig-conn-label"></span></div>
       <div style="display:flex;gap:7px;flex-wrap:wrap;">
@@ -935,7 +940,7 @@ tr:hover td{background:var(--s2);}
       <div class="fg"><label class="fl">Source</label><select class="fs" id="nv-source"><option>Copart</option><option>Motorway</option><option>Carwow</option><option>Facebook</option><option>Private</option><option>Part Exchange</option><option>BCA</option></select></div>
     </div>
     <div class="g2">
-      <div class="fg"><label class="fl">Investor</label><select class="fs" id="nv-investor"><option>MP</option><option>James</option><option>Daniel</option><option>Joseph</option><option>Jeff</option><option>Adam</option><option>Anthony</option><option>Leonardo</option></select></div>
+      <div class="fg"><label class="fl">Investor</label><select class="fs" id="nv-investor"></select></div>
       <div class="fg"><label class="fl">Recon Cost (£)</label><input class="fi" type="number" id="nv-recon" placeholder="0.00" min="0" step="0.01"></div>
     </div>
     <div class="fg"><label class="fl">Notes / Status</label><textarea class="fta" id="nv-notes" placeholder="Prep notes, status..."></textarea></div>
@@ -1312,7 +1317,7 @@ function rebuildFinLog() {
   finLog = [];
   APP_DATA.expenses.forEach((e, i) => {
     const notePlate = ((e.notes||'') + ' ' + (e.from||'')).match(/[A-Z]{2}\d{2}\s?[A-Z]{3}/i);
-    const plate = notePlate ? notePlate[0].replace(/\s+/g,' ').trim().toUpperCase() : '';
+    const plate = normP(e.plate) || (notePlate ? notePlate[0].replace(/\s+/g,' ').trim().toUpperCase() : '');
     const vehicle = plate ? stockData.find(v=>normP(v.plate)===normP(plate)) || APP_DATA.sold.find(v=>normP(v.plate)===normP(plate)) : null;
     finLog.push({id:'h'+i, date:(e.date||e.month||'').slice(0,10), plate: plate, model: vehicle ? vehicle.make_model : '', desc:[(e.from||''),(e.notes||e.category||'')].filter(Boolean).join(' · '), cat:e.category||'Other', amount:e.amount||0});
   });
@@ -1358,15 +1363,23 @@ function escJs(v){ return String(v??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"
 // ════════════════════════════════════════════
 // NAV
 // ════════════════════════════════════════════
+const COMING_SOON_PAGES = new Set(['servicehistory','mot','insurance','viewings','tasks','receipts','wages','vat','reports','autotrader','instagram']);
 function nav(id, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.ni,.mni').forEach(n => n.classList.remove('active'));
   const page = document.getElementById('page-'+id);
   if (page) page.classList.add('active');
   if (el) el.classList.add('active');
-  const titles = {dashboard:'Dashboard',stock:'Current Stock',sold:'Sold History',collections:'Collections & Deliveries',servicehistory:'Service Invoices',mot:'MOT Tracker',insurance:'Insurance & SORN',viewings:'Viewings',sellcar:'Investor Invoices',tasks:'Tasks',fines:'Fines & Penalties',expenses:'Finance Log',receipts:'Receipts & AI Scan',banking:'Routes & Planning',invoices:'Investor Invoices',investors:'Investor Budget',wages:'Staff & Wages',vat:'VAT Tracker',reports:'Reports & Analytics',autotrader:'Auto Trader',instagram:'Instagram'};
+  const titles = {dashboard:'Dashboard',stock:'Current Stock',sold:'Sold History',collections:'Collections & Deliveries',servicehistory:'Service Invoices',mot:'MOT Tracker',insurance:'Insurance & SORN',viewings:'Viewings',sellcar:'Sell a Car',tasks:'Tasks',fines:'Fines & Penalties',expenses:'Finance Log',receipts:'Receipts & AI Scan',banking:'Banking',invoices:'Investor Invoices',investors:'Investor Ledger',wages:'Staff & Wages',vat:'VAT Tracker',reports:'Reports & Analytics',autotrader:'Auto Trader',instagram:'Instagram'};
   document.getElementById('tb-title').textContent = titles[id]||id;
   closeSB(); window.scrollTo(0,0);
+  if (COMING_SOON_PAGES.has(id) && page && !page.dataset.csBannerAdded) {
+    const banner = document.createElement('div');
+    banner.className = 'cs-banner';
+    banner.innerHTML = '<div class="cs-banner-icon">🚧</div><div class="cs-banner-body"><div class="cs-banner-title">Coming Soon</div><div class="cs-banner-sub">This module is under development and will be available soon. Existing data below is preserved and ready for when this feature goes live.</div></div><div class="cs-banner-pill">In Development</div>';
+    page.insertBefore(banner, page.firstChild);
+    page.dataset.csBannerAdded = '1';
+  }
   const fns = {stock:renderStock,sold:renderSold,expenses:renderFinance,investors:renderInvestors,reports:renderReports,tasks:renderTasks,mot:renderMOT,insurance:renderInsurance,viewings:renderViewings,fines:renderFines,receipts:renderReceipts,banking:renderBanking,wages:renderWages,vat:renderVAT,collections:renderCollections,invoices:renderInvoiceList,servicehistory:renderServiceHistory,autotrader:renderAutoTrader,instagram:renderInstagram};
   if (fns[id]) fns[id]();
 }
@@ -1423,18 +1436,24 @@ function renderDashboard() {
 // ════════════════════════════════════════════
 // STOCK
 // ════════════════════════════════════════════
-function filterStock(f,el){stockFilter=f;document.querySelectorAll('.tabs .tab').forEach(t=>t.classList.remove('active'));if(el)el.classList.add('active');renderStock();}
+function showComingSoon(el){
+  const wrap=document.getElementById('stock-tbody').closest('.card');
+  document.querySelectorAll('#page-stock .tabs .tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  wrap.innerHTML='<div class="coming-soon-msg"><div class="cs-icon">🚧</div><div class="cs-title">Coming Soon</div><div class="cs-desc">This feature is under development.</div></div>';
+}
+function filterStock(f,el){stockFilter=f;document.querySelectorAll('#page-stock .tabs .tab').forEach(t=>t.classList.remove('active'));if(el)el.classList.add('active');
+  const wrap=document.getElementById('stock-tbody');
+  if(!wrap){document.querySelector('#page-stock .card').innerHTML='<div class="tw"><table><thead><tr><th>Vehicle</th><th>Plate</th><th>Source</th><th>Investor</th><th>Total Cost</th><th>Days</th><th>Website</th><th>Auto Trader</th><th>Left to do</th><th>Actions</th></tr></thead><tbody id="stock-tbody"></tbody></table></div>';}
+  renderStock();
+}
 function renderStock() {
   let fl = stockData.slice();
-  if(stockFilter==='website') fl = fl.filter(v=>v.website_listed);
-  else if(stockFilter==='autotrader') fl = fl.filter(v=>v.autotrader_listed);
-  else if(stockFilter==='needs') fl = fl.filter(v=>!(v.website_listed||v.autotrader_listed) || (v.todo||[]).length>1);
-  else if(stockFilter==='ready') fl = fl.filter(v=>(v.todo||[]).includes('List live') || /ready to list/i.test(v.status||''));
   document.getElementById('stock-count').textContent='· '+fl.length+' vehicles';
   document.getElementById('nb-stock').textContent = stockData.length;
   document.getElementById('stock-tbody').innerHTML = fl.map(v=>{
     const todo = (v.todo||[]).map(t=>'<span class="badge bk" style="margin:1px;">'+t+'</span>').join('') || '<span class="badge bg">Nothing left</span>';
-    return '<tr><td class="tdm">'+v.make_model+'<div style="font-size:10px;color:var(--text3);">'+fmtD(v.date_acquired)+'</div></td><td><span class="mono">'+v.plate+'</span></td><td>'+(v.source||'—')+'</td><td>'+v.investor+'</td><td style="font-weight:700">'+fmt0(v.total_cost)+'</td><td>'+v.days_in_stock+'d</td><td><span class="badge '+(v.website_listed?'bg':'bk')+'">'+(v.website_listed?'Listed':'Not live')+'</span></td><td><span class="badge '+(v.autotrader_listed?'bb':'bk')+'">'+(v.autotrader_listed?'Listed':'Not live')+'</span></td><td>'+todo+'<div style="font-size:10px;color:var(--text3);margin-top:4px;">'+escHtml(v.status||'')+'</div></td><td><div style="display:flex;gap:4px;flex-wrap:wrap;"><button class="btn btn-g btn-xs" onclick="openMediaManager(\''+v.plate+'\',\''+escJs(v.make_model)+'\')">📷</button><button class="btn btn-b btn-xs" onclick="nav(\'autotrader\',document.querySelector(\'[onclick*=autotrader]\'))">AT</button><button class="btn btn-g btn-xs" onclick="openStockBreakdown(\''+v.plate+'\')">View</button></div></td></tr>';
+    return '<tr><td class="tdm">'+v.make_model+'<div style="font-size:10px;color:var(--text3);">'+fmtD(v.date_acquired)+'</div></td><td><span class="mono">'+v.plate+'</span></td><td>'+(v.source||'—')+'</td><td>'+v.investor+'</td><td style="font-weight:700">'+fmt0(v.total_cost)+'</td><td>'+v.days_in_stock+'d</td><td><span class="badge bk" style="font-size:9px;color:#fff;opacity:1;">Coming Soon</span></td><td><span class="badge bk" style="font-size:9px;color:#fff;opacity:1;">Coming Soon</span></td><td><span class="badge bk" style="font-size:9px;color:#fff;opacity:1;">Coming Soon</span></td><td><div style="display:flex;gap:4px;flex-wrap:wrap;"><button class="btn btn-g btn-xs" onclick="openMediaManager(\''+v.plate+'\',\''+escJs(v.make_model)+'\')">📷</button><button class="btn btn-b btn-xs" onclick="nav(\'autotrader\',document.querySelector(\'[onclick*=autotrader]\'))">AT</button><button class="btn btn-g btn-xs" onclick="openStockBreakdown(\''+v.plate+'\')">View</button></div></td></tr>';
   }).join('');
 }
 
@@ -1850,6 +1869,7 @@ function renderVAT() {
 // ════════════════════════════════════════════
 function searchReg(val) {
   val=val.trim().toUpperCase();
+  if(!val){document.getElementById('reg-not-found').style.display='none';document.getElementById('reg-result').style.display='none';document.getElementById('sell-form').style.display='none';return;}
   if(val.length<3){document.getElementById('reg-not-found').style.display='none';return;}
   const v=findV(val);
   if(!v){document.getElementById('reg-not-found').style.display='block';document.getElementById('reg-result').style.display='none';document.getElementById('sell-form').style.display='none';document.getElementById('invoice-output').style.display='none';return;}
@@ -1909,14 +1929,46 @@ function generateInvoice() {
   document.getElementById('invoice-output').scrollIntoView({behavior:'smooth'});
   savedInvoices.unshift({invNum,make_model:v.make_model,plate:v.plate,sale,cost,profit,invP,pct,investor,saleDate,html});
 }
+const PHONE_RE = /^[+\d][\d\s\-(). ]{5,18}$/;
+function showFieldErr(errId, inputId) {
+  document.getElementById(errId).style.display = 'block';
+  document.getElementById(inputId).style.borderColor = 'var(--red)';
+}
+function clearFieldErr(errId, inputId) {
+  document.getElementById(errId).style.display = 'none';
+  document.getElementById(inputId).style.borderColor = '';
+}
+function validateSellPhone(input) {
+  const val = input.value.trim();
+  const err = document.getElementById('sell-phone-err');
+  if (!val || !PHONE_RE.test(val)) {
+    err.style.display = 'block';
+    input.style.borderColor = 'var(--red)';
+  } else {
+    err.style.display = 'none';
+    input.style.borderColor = '';
+  }
+}
 async function markAsSold() {
   if(!currentVehicle){alert('Search for a vehicle first.');return;}
   const sale=parseFloat(document.getElementById('sell-price').value)||0;
-  if(!sale){alert('Enter the sale price.');return;}
-  const v=currentVehicle;
-  const saleDate=document.getElementById('sell-date').value||today();
   const customerName=document.getElementById('sell-customer').value.trim();
   const contactInfo=document.getElementById('sell-phone').value.trim();
+  let hasErr=false;
+  if(!sale){showFieldErr('sell-price-err','sell-price');hasErr=true;}
+  else{clearFieldErr('sell-price-err','sell-price');}
+  if(!customerName){showFieldErr('sell-customer-err','sell-customer');hasErr=true;}
+  else{clearFieldErr('sell-customer-err','sell-customer');}
+  if(!contactInfo||!PHONE_RE.test(contactInfo)){showFieldErr('sell-phone-err','sell-phone');hasErr=true;}
+  else{clearFieldErr('sell-phone-err','sell-phone');}
+  if(hasErr){
+    if(!sale)document.getElementById('sell-price').focus();
+    else if(!customerName)document.getElementById('sell-customer').focus();
+    else document.getElementById('sell-phone').focus();
+    return;
+  }
+  const v=currentVehicle;
+  const saleDate=document.getElementById('sell-date').value||today();
   const warranty=document.getElementById('sell-warranty').value.trim();
   const invoiceNumber=document.getElementById('sell-invnum').value.trim();
   const btn=document.getElementById('sell-btn');
@@ -2214,6 +2266,16 @@ async function bootApp() {
   }
 }
 
+function populateInvestorDropdowns() {
+  const names = (APP_DATA.investors || []).map(inv => inv.name).filter(Boolean);
+  // Add Vehicle dropdown: SA first (dealership-owned), then DB investors
+  const nvSel = document.getElementById('nv-investor');
+  nvSel.innerHTML = '<option value="SA">SA</option>' + names.map(n => '<option value="' + n + '">' + n + '</option>').join('');
+  // Sell Car dropdown: DB investors only (vehicle already has an investor assigned)
+  const sellSel = document.getElementById('sell-investor');
+  sellSel.innerHTML = names.map(n => '<option value="' + n + '">' + n + '</option>').join('');
+}
+
 function initUI() {
   // Set logo everywhere
   document.getElementById('sidebar-logo').src = LOGO;
@@ -2234,6 +2296,7 @@ function initUI() {
   // AT & IG init
   populateATNewSelect();
   populateIGNewSelect();
+  populateInvestorDropdowns();
   updateNavBadges();
   renderDashboard();
   renderStock();
@@ -2996,12 +3059,18 @@ function handleMediaUpload(input) {
   [...input.files].forEach((file,i)=>{
     const url = URL.createObjectURL(file);
     const tag = PHOTO_ORDER_TEMPLATE[pics.length]||'front';
-    pics.push({id:'ph-'+Date.now()+'-'+i, url, tag, cover:pics.length===0, order:pics.length, atUploaded:false, igUsed:false});
+    const photo = {id:'ph-'+Date.now()+'-'+i, url, tag, cover:pics.length===0, order:pics.length, atUploaded:false, igUsed:false};
+    pics.push(photo);
     if(stockId){
       const fd = new FormData();
       fd.append('category', 'Photos');
       fd.append('file', file);
-      fetch('/api/vehicles/'+stockId+'/files', {method:'POST', body:fd}).catch(()=>{});
+      fetch('/api/vehicles/'+stockId+'/files', {method:'POST', body:fd})
+        .then(r=>r.json())
+        .then(data=>{
+          if(data.path){ photo.backendPath=data.path; photo.url=data.path; saveToStorage(); }
+        })
+        .catch(()=>{});
     }
   });
   vehiclePhotos[np] = pics;

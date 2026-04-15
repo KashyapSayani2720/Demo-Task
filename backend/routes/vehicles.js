@@ -130,11 +130,19 @@ router.post('/:stock_id/sell', async (req, res, next) => {
     const v = await Vehicle.findOne({ stock_id: req.params.stock_id });
     if (!v) return res.status(404).json({ error: 'Vehicle not found' });
     const b = req.body;
+    const rawPhone = normalizeString(b.contact_info);
+    const rawName = normalizeString(b.customer_name);
+    const rawPrice = normalizeAmount(b.sold_price);
+    const PHONE_RE = /^[+\d][\d\s\-(). ]{5,18}$/;
+    if (!rawPrice || rawPrice <= 0) return res.status(400).json({ error: 'Sale price is required.' });
+    if (!rawName) return res.status(400).json({ error: 'Customer name is required.' });
+    if (!rawPhone) return res.status(400).json({ error: 'Customer phone is required.' });
+    if (!PHONE_RE.test(rawPhone)) return res.status(400).json({ error: 'Invalid phone number. Use digits, spaces, +, hyphens or brackets only.' });
     v.status = 'Sold';
-    v.sold_price = normalizeAmount(b.sold_price);
+    v.sold_price = rawPrice;
     v.date_sold = normalizeDate(b.date_sold) || new Date().toISOString().slice(0, 10);
-    v.customer_name = normalizeString(b.customer_name);
-    v.contact_info = normalizeString(b.contact_info);
+    v.customer_name = rawName;
+    v.contact_info = rawPhone;
     v.warranty = normalizeString(b.warranty);
     v.invoice_number = normalizeString(b.invoice_number);
     v.platform = normalizeString(b.platform);
@@ -205,7 +213,12 @@ router.get('/:stock_id/open-folder', (req, res) => {
               platform === 'darwin' ? `open "${folder}"` :
               `xdg-open "${folder}"`;
   exec(cmd, (err) => {
-    if (err) return res.status(500).json({ error: err.message });
+    // explorer.exe (and similar OS commands) often exit with non-zero codes
+    // even when the folder opens successfully, so we only treat it as a real
+    // failure if the command itself could not be launched (ENOENT/EACCES).
+    if (err && (err.code === 'ENOENT' || err.code === 'EACCES')) {
+      return res.status(500).json({ error: err.message });
+    }
     res.json({ ok: true, folder });
   });
 });
