@@ -1503,7 +1503,7 @@ function renderSold() {
     document.getElementById('sold-tbody').innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--text3);padding:18px;">No matching sold vehicles found.</td></tr>';
     return;
   }
-  document.getElementById('sold-tbody').innerHTML=arr.map((v,i)=>'<tr><td>'+mLabel(v.month)+'</td><td class="tdm">'+v.make_model+'</td><td><span class="mono">'+v.plate+'</span></td><td>'+fmtD(v.date_acquired)+'</td><td>'+(v.date_sold?fmtD(v.date_sold):'—')+'</td><td>'+(v.source||'—')+'</td><td>'+v.days_in_stock+'d</td><td>'+fmt0(v.total_cost)+'</td><td>'+fmt0(v.sold_price)+'</td><td style="color:'+(v.profit>=0?'var(--green)':'var(--red)')+';font-weight:700">'+fmt(v.profit)+'</td><td>'+(v.investor||'SA')+'</td><td><button class="btn btn-g btn-xs" onclick="showSoldBreakdown('+i+')">Full</button></td></tr>').join('');
+  document.getElementById('sold-tbody').innerHTML=arr.map((v,i)=>'<tr><td>'+mLabel(v.month)+'</td><td class="tdm">'+v.make_model+'</td><td><span class="mono">'+v.plate+'</span></td><td>'+fmtD(v.date_acquired)+'</td><td>'+(v.date_sold?fmtD(v.date_sold):'—')+'</td><td>'+(v.source||'—')+'</td><td>'+v.days_in_stock+'d</td><td>'+fmt0(v.total_cost)+'</td><td>'+fmt0(v.sold_price)+'</td><td style="color:'+(v.profit>=0?'var(--green)':'var(--red)')+';font-weight:700">'+fmt(v.profit)+'</td><td>'+(v.investor||'SA')+'</td><td><button class="btn btn-g btn-xs" disabled">Full</button></td></tr>').join('');
 }
 
 // ════════════════════════════════════════════
