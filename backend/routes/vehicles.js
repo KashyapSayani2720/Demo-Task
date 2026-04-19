@@ -8,8 +8,8 @@ import Investor from '../models/Investor.js';
 import MoneyIn from '../models/MoneyIn.js';
 import { nextStockId } from '../services/stockIdGenerator.js';
 import { normalizePlate, normalizeDate, normalizeMonth, normalizeAmount, normalizeString } from '../services/normalize.js';
-import { createVehicleFolders, listVehicleFiles } from '../services/fileManager.js';
-import upload from '../middleware/upload.js';
+import { createVehicleFolders, listVehicleFiles, VEHICLE_FOLDERS } from '../services/fileManager.js';
+import upload, { IS_CLOUD } from '../middleware/upload.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -186,6 +186,16 @@ router.post('/:stock_id/sell', async (req, res, next) => {
 // GET /api/vehicles/:stock_id/files — list files by category
 router.get('/:stock_id/files', async (req, res, next) => {
   try {
+    if (IS_CLOUD) {
+      const v = await Vehicle.findOne({ stock_id: req.params.stock_id });
+      const result = Object.fromEntries(VEHICLE_FOLDERS.map(f => [f, []]));
+      for (const file of (v?.files || [])) {
+        if (result[file.category]) {
+          result[file.category].push({ name: file.name, path: file.url, size: file.size });
+        }
+      }
+      return res.json(result);
+    }
     const files = listVehicleFiles(req.params.stock_id);
     res.json(files);
   } catch (err) { next(err); }
@@ -195,9 +205,27 @@ router.get('/:stock_id/files', async (req, res, next) => {
 router.post('/:stock_id/files', upload.single('file'), async (req, res, next) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    const { stock_id } = req.params;
+    const category = req.body.category || 'Documents';
+
+    if (IS_CLOUD) {
+      const { put } = await import('@vercel/blob');
+      const filename = Date.now() + '-' + req.file.originalname;
+      const blob = await put(`Cars/${stock_id}/${category}/${filename}`, req.file.buffer, {
+        access: 'public',
+        contentType: req.file.mimetype
+      });
+      const v = await Vehicle.findOne({ stock_id });
+      if (v) {
+        v.files.push({ name: filename, url: blob.url, category, size: req.file.size });
+        await v.save();
+      }
+      return res.json({ message: 'File uploaded', path: blob.url });
+    }
+
     res.json({
       message: 'File uploaded',
-      path: `/files/Cars/${req.params.stock_id}/${req.body.category || 'Documents'}/${req.file.filename}`
+      path: `/files/Cars/${stock_id}/${category}/${req.file.filename}`
     });
   } catch (err) { next(err); }
 });

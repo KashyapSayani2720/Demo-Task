@@ -31,7 +31,14 @@ const vehicleSchema = new mongoose.Schema({
   invoice_number: { type: String, default: '' },
   autoguard: { type: String, default: '' },
   notes: { type: String, default: '' },
-  todo: [String]
+  todo: [String],
+  // Cloud file metadata (populated in Vercel/Blob mode; unused in local disk mode)
+  files: [{
+    name: { type: String },
+    url: { type: String },
+    category: { type: String },
+    size: { type: Number }
+  }]
 }, { timestamps: true });
 
 vehicleSchema.virtual('days_in_stock').get(function () {

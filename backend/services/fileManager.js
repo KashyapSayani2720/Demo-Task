@@ -10,8 +10,12 @@ const VEHICLE_FOLDERS = ['Photos', 'Documents', 'ServiceHistory', 'MOT', 'Purcha
 
 export function createVehicleFolders(stock_id) {
   const root = path.join(STORAGE_ROOT, 'Cars', stock_id);
-  for (const folder of VEHICLE_FOLDERS) {
-    fs.mkdirSync(path.join(root, folder), { recursive: true });
+  try {
+    for (const folder of VEHICLE_FOLDERS) {
+      fs.mkdirSync(path.join(root, folder), { recursive: true });
+    }
+  } catch {
+    // No-op on read-only filesystems (e.g. Vercel serverless)
   }
   return root;
 }
@@ -19,7 +23,11 @@ export function createVehicleFolders(stock_id) {
 export function createInvestorFolder(name) {
   const safeName = name.replace(/[<>:"/\\|?*]/g, '_');
   const root = path.join(STORAGE_ROOT, 'Investors', safeName);
-  fs.mkdirSync(root, { recursive: true });
+  try {
+    fs.mkdirSync(root, { recursive: true });
+  } catch {
+    // No-op on read-only filesystems (e.g. Vercel serverless)
+  }
   return root;
 }
 
