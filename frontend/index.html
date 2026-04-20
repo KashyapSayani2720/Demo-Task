@@ -1476,6 +1476,10 @@ function renderStock() {
   }
   document.getElementById('stock-count').textContent='· '+fl.length+' vehicles';
   document.getElementById('nb-stock').textContent = stockData.length;
+  if (!document.getElementById('stock-tbody')) {
+    const card = document.querySelector('#page-stock .card');
+    if (card) card.innerHTML = '<div class="tw"><table><thead><tr><th>Vehicle</th><th>Plate</th><th>Source</th><th>Investor</th><th>Total Cost</th><th>Days</th><th>Website</th><th>Auto Trader</th><th>Left to do</th><th>Actions</th></tr></thead><tbody id="stock-tbody"></tbody></table></div>';
+  }
   if (!fl.length) {
     document.getElementById('stock-tbody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:18px;">No matching stock found.</td></tr>';
     return;
@@ -2345,7 +2349,7 @@ async function bootApp() {
     initUI();
   } catch (err) {
     console.error('Boot failed:', err);
-    document.body.innerHTML = '<div style="padding:40px;font-family:sans-serif;color:#fff;background:#0a0a0d;min-height:100vh"><h2>Failed to load data</h2><p>'+err.message+'</p><p>Make sure the backend is running on port 5050.</p></div>';
+    document.body.innerHTML = '<div style="padding:40px;font-family:sans-serif;color:#fff;background:#0a0a0d;min-height:100vh"><h2>Failed to load data</h2><p>'+err.message+'</p><p>Please refresh the page. If the problem persists, the server may be starting up — wait a moment and try again.</p><p><button onclick="location.reload()" style="margin-top:12px;padding:10px 20px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;">Retry</button></p></div>';
   }
 }
 
