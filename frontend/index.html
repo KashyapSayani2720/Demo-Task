@@ -1536,8 +1536,8 @@ async function addCollection(){
       driver: document.getElementById('col-driver').value||'',
       cost: document.getElementById('col-cost').value|| 0
     });
+    ['col-plate','col-won','col-date','col-addr','col-notes','col-status','col-driver','col-cost','col-link'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
     closeM('addcollection'); await bootApp();
-    ['col-plate','col-won','col-date','col-addr','col-notes','col-status','col-driver','col-cost','col-link'].forEach(id=>document.getElementById(id).value='');
   } catch(e) { alert('Error: '+e.message); }
 }
 
@@ -2355,7 +2355,7 @@ async function bootApp() {
     initUI();
   } catch (err) {
     console.error('Boot failed:', err);
-    document.body.innerHTML = '<div style="padding:40px;font-family:sans-serif;color:#fff;background:#0a0a0d;min-height:100vh"><h2>Failed to load data</h2><p>'+err.message+'</p><p>Please refresh the page. If the problem persists, the server may be starting up — wait a moment and try again.</p><p><button onclick="location.reload()" style="margin-top:12px;padding:10px 20px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;">Retry</button></p></div>';
+    location.reload()
   }
 }
 
