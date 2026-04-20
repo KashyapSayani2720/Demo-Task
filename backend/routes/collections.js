@@ -38,6 +38,8 @@ router.post('/', async (req, res, next) => {
       distance_note: normalizeString(b.distance_note),
       number: normalizeString(b.number),
       notes: normalizeString(b.notes),
+      driver: normalizeString(b.driver),
+      cost: normalizeString(b.cost),
       status: b.status || 'Pending'
     });
     res.status(201).json(c);

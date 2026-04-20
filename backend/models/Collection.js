@@ -11,6 +11,8 @@ const collectionSchema = new mongoose.Schema({
   postcode: { type: String, default: '' },
   distance_note: { type: String, default: '' },
   number: { type: String, default: '' },
+  driver: { type: String, default: '' },
+  cost: { type: Number, default: 0 },
   status: {
     type: String,
     enum: ['Pending', 'Scheduled', 'Collected'],

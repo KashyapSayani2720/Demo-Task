@@ -1017,8 +1017,8 @@ tr:hover td{background:var(--s2);}
     </div>
     <div class="fg"><label class="fl">From / To Address</label><input class="fi" id="col-addr" placeholder="Collection or delivery address (Google Maps autocomplete ready)"></div>
     <div class="g2">
-      <div class="fg"><label class="fl">Cost (£)</label><input class="fi" type="number" id="col-cost" placeholder="0.00"></div>
-      <div class="fg"><label class="fl">Status</label><select class="fs" id="col-status"><option>Pending</option><option>Booked</option><option>Collected</option><option>Delivered</option></select></div>
+      <div class="fg"><label class="fl">Cost (£)</label><input class="fi" min="0" type="number" id="col-cost" placeholder="0.00"></div>
+      <div class="fg"><label class="fl">Status</label><select class="fs" id="col-status"><option>Pending</option><option>Collected</option></select></div>
     </div>
     <div class="fg"><label class="fl">Notes</label><textarea class="fta" id="col-notes" placeholder="Any additional notes..."></textarea></div>
     <div style="display:flex;gap:7px;justify-content:flex-end;">
@@ -1368,7 +1368,7 @@ function escJs(v){ return String(v??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"
 // ════════════════════════════════════════════
 // NAV
 // ════════════════════════════════════════════
-const COMING_SOON_PAGES = new Set(['servicehistory','mot','insurance','viewings','tasks','receipts','wages','vat','reports','autotrader','instagram']);
+const COMING_SOON_PAGES = new Set(['servicehistory','mot','insurance','viewings','tasks','receipts','wages','vat','reports','autotrader','instagram', 'invoices']);
 function nav(id, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.ni,.mni').forEach(n => n.classList.remove('active'));
@@ -1517,21 +1517,27 @@ function renderCollections() {
   document.getElementById('collections-list').innerHTML=incoming.length?incoming.map(c=>'<div class="li"><div class="ldot" style="background:var(--amber)"></div><div class="lc"><div class="lt">'+c.plate+' — '+c.make_model+'</div><div class="lm">'+(c.addr||'Address needed')+' · Won '+fmtD(c.date_won)+'</div><div class="lv">Pending '+(c.days_pending||0)+' days · '+(c.distance_note||'Distance to be checked')+'</div></div><span class="badge ba">'+c.status+'</span></div>').join(''):'<div style="color:var(--text3);font-size:12px;padding:10px;">No inbound cars</div>';
   // document.getElementById('deliveries-list').innerHTML=outgoing.length?outgoing.map(c=>'<div class="li"><div class="ldot" style="background:var(--blue)"></div><div class="lc"><div class="lt">'+c.plate+' — '+c.make_model+'</div><div class="lm">'+(c.addr||'Address needed')+' · '+fmtD(c.date)+'</div><div class="lv">Driver: '+(c.driver||'TBC')+'</div></div><span class="badge bb">'+c.status+'</span></div>').join(''):'<div style="color:var(--text3);font-size:12px;padding:10px;">No deliveries logged</div>';
   const all = incoming.map(c=>Object.assign({},c,{type:'Incoming'})).concat(outgoing.map(c=>Object.assign({},c,{type:'Delivery'})));
-  document.getElementById('col-tbody').innerHTML=all.map(c=>'<tr><td><span class="badge '+(c.type==='Incoming'?'ba':'bb')+'">'+c.type+'</span></td><td class="tdm">'+c.make_model+'</td><td><span class="mono">'+c.plate+'</span></td><td>'+(c.type==='Incoming'?fmtD(c.date_won):fmtD(c.date||c.scheduled_date))+'</td><td>'+(c.addr||'—')+'</td><td>'+(c.driver||'—')+'</td><td>'+(c.cost?fmt0(c.cost):'—')+'</td><td>'+(c.status||'Pending')+'<div style="font-size:10px;color:var(--text3);">'+(c.linked_vehicles&&c.linked_vehicles.length?'Linked: '+c.linked_vehicles.join(', '):'')+'</div></td></tr>').join('');
+  document.getElementById('col-tbody').innerHTML=all.map(c=>'<tr><td><span class="badge '+(c.type==='Incoming'?'ba':'bb')+'">'+c.type+'</span></td><td class="tdm">'+c.make_model+'</td><td><span class="mono">'+c.plate+'</span></td><td>'+(c.type==='Incoming'?fmtD(c.date_won):fmtD(c.date||c.scheduled_date))+'</td><td>'+(c.address||'—')+'</td><td>'+(c.driver||'—')+'</td><td>'+(c.cost?fmt0(c.cost):'—')+'</td><td>'+(c.status||'Pending')+'<div style="font-size:10px;color:var(--text3);">'+(c.linked_vehicles&&c.linked_vehicles.length?'Linked: '+c.linked_vehicles.join(', '):'')+'</div></td></tr>').join('');
 }
 async function addCollection(){
   const plate=document.getElementById('col-plate').value.trim().toUpperCase();
   try {
     await api('POST', '/collections', {
-      plate, make_model: (findV(plate)||{}).make_model||'',
-      source: '', date_won: document.getElementById('col-won').value||today(),
+      plate, 
+      make_model: (findV(plate)||{}).make_model||'',
+      source: '', 
+      date_won: document.getElementById('col-won').value||today(),
       collection_date: document.getElementById('col-date').value||'',
       address: document.getElementById('col-addr').value,
-      postcode: '', distance_note: '',
+      postcode: '', 
+      distance_note: '',
       notes: document.getElementById('col-notes').value,
-      status: document.getElementById('col-status').value||'Pending'
+      status: document.getElementById('col-status').value||'Pending',
+      driver: document.getElementById('col-driver').value||'',
+      cost: document.getElementById('col-cost').value|| 0
     });
     closeM('addcollection'); await bootApp();
+    ['col-plate','col-won','col-date','col-addr','col-notes','col-status','col-driver','col-cost','col-link'].forEach(id=>document.getElementById(id).value='');
   } catch(e) { alert('Error: '+e.message); }
 }
 
@@ -2199,7 +2205,7 @@ function handleSearch(q){
   }
 }
 function exportStock(){const rows=[['Plate','Model','Investor','Total Cost','Days','Status','Notes']];stockData.forEach(v=>rows.push([v.plate,v.make_model,v.investor,v.total_cost,v.days_in_stock,v.status,v.notes]));dlCSV(rows,'stock.csv');}
-function exportSold(){const rows=[['Month','Plate','Model','Cost','Sold','Profit','Investor']];APP_DATA.sold.forEach(v=>rows.push([v.month,v.plate,v.make_model,v.total_cost,v.sold_price,v.profit,v.investor]));dlCSV(rows,'sold.csv');}
+function exportSold(){const f=document.getElementById('sold-filter').value;const arr=f?APP_DATA.sold.filter(v=>v.month===f):APP_DATA.sold;const rows=[['Month','Plate','Model','Cost','Sold','Profit','Investor']];arr.forEach(v=>rows.push([v.month,v.plate,v.make_model,v.total_cost,v.sold_price,v.profit,v.investor]));dlCSV(rows,f?'sold_'+f+'.csv':'sold.csv');}
 function dlCSV(rows,name){const csv=rows.map(r=>r.map(c=>'"'+(c||'').toString().replace(/"/g,'""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download=name;a.click();}
 
 function exportExcel(){
