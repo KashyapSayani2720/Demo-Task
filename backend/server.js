@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import connectDB from './config/db.js';
 import { autoSeed } from './services/seeder.js';
 import errorHandler from './middleware/errorHandler.js';
+import { mongoose } from './config/db.js';
 
 // Route imports
 import bootstrapRouter from './routes/bootstrap.js';
@@ -51,6 +52,46 @@ app.use('/api/viewings', viewingsRouter);
 app.use('/api/tasks', tasksRouter);
 app.use('/api/fines', finesRouter);
 app.use('/api/excel', excelRouter);
+
+// Health check
+app.get('/health', async (req, res) => {
+  try {
+    // MongoDB ping
+    const dbState = mongoose.connection.readyState;
+
+    /*
+      0 = disconnected
+      1 = connected
+      2 = connecting
+      3 = disconnecting
+    */
+
+    if (dbState !== 1) {
+      return res.status(500).json({
+        status: 'DOWN',
+        db: 'NOT_CONNECTED',
+      });
+    }
+
+    // Actual ping (strong check)
+    await mongoose.connection.db.admin().ping();
+
+    res.status(200).json({
+      status: 'OK',
+      db: 'CONNECTED',
+      uptime: process.uptime(),
+      memoryUsage: process.memoryUsage(),
+      timestamp: new Date(),
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      status: 'DOWN',
+      db: 'ERROR',
+      error: error.message,
+    });
+  }
+});
 
 // Fallback: serve frontend for non-API routes
 app.get('*', (req, res) => {

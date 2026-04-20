@@ -8,7 +8,7 @@ import Investor from '../models/Investor.js';
 import MoneyIn from '../models/MoneyIn.js';
 import { nextStockId } from '../services/stockIdGenerator.js';
 import { normalizePlate, normalizeDate, normalizeMonth, normalizeAmount, normalizeString } from '../services/normalize.js';
-import { createVehicleFolders, listVehicleFiles } from '../services/fileManager.js';
+import { createVehicleFolders, listVehicleFiles, deleteVehicleFile} from '../services/fileManager.js';
 import upload from '../middleware/upload.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -113,6 +113,45 @@ router.put('/:stock_id', async (req, res, next) => {
     await v.save();
     res.json(v);
   } catch (err) { next(err); }
+});
+
+function pickFilePathFromRequest(req) {
+  const fromBody = req.body?.path;
+  if (typeof fromBody === 'string' && fromBody.trim()) return fromBody.trim();
+  const q = req.query?.path;
+  if (typeof q === 'string' && q.trim()) return q.trim();
+  if (Array.isArray(q) && typeof q[0] === 'string' && q[0].trim()) return q[0].trim();
+  return '';
+}
+// POST /api/vehicles/:stock_id/delete-file — remove one file (JSON body; reliable on all clients)
+router.post('/:stock_id/delete-file', async (req, res, next) => {
+  try {
+    const filePath = pickFilePathFromRequest(req);
+    if (!filePath) return res.status(400).json({ error: 'path is required in body' });
+    const result = deleteVehicleFile(req.params.stock_id, filePath);
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    if (err.message && (err.message.includes('Invalid') || err.message.includes('does not match'))) {
+      return res.status(400).json({ error: err.message });
+    }
+    next(err);
+  }
+});
+// DELETE /api/vehicles/:stock_id/files — remove one file (register before DELETE /:stock_id)
+router.delete('/:stock_id/files', async (req, res, next) => {
+  try {
+    const filePath = pickFilePathFromRequest(req);
+    if (!filePath) {
+      return res.status(400).json({ error: 'path is required (body or query)' });
+    }
+    const result = deleteVehicleFile(req.params.stock_id, filePath);
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    if (err.message && (err.message.includes('Invalid') || err.message.includes('does not match'))) {
+      return res.status(400).json({ error: err.message });
+    }
+    next(err);
+  }
 });
 
 // DELETE /api/vehicles/:stock_id

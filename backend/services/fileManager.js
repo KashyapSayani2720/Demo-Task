@@ -23,6 +23,36 @@ export function createInvestorFolder(name) {
   return root;
 }
 
+/**
+ * Delete a single file under a vehicle folder. publicPath must be /files/Cars/{stock_id}/{category}/{filename}
+ */
+export function deleteVehicleFile(stock_id, publicPath) {
+  let p = String(publicPath || '').replace(/\\/g, '/').trim();
+  const originIdx = p.toLowerCase().indexOf('/files/cars/');
+  if (originIdx >= 0) p = p.slice(originIdx).split('?')[0].split('#')[0];
+  const m = p.match(/^\/files\/Cars\/([^/]+)\/([^/]+)\/([^/]+)\/?$/i);
+  if (!m) throw new Error('Invalid file path');
+  let [, sid, folderRaw, filenameEnc] = m;
+  if (sid !== stock_id) throw new Error('Path does not match vehicle');
+  const folder = VEHICLE_FOLDERS.find(f => f.toLowerCase() === folderRaw.toLowerCase());
+  if (!folder) throw new Error('Invalid category');
+  let filename = filenameEnc;
+  try {
+    filename = decodeURIComponent(filenameEnc.replace(/\+/g, ' '));
+  } catch {
+    filename = filenameEnc;
+  }
+  const abs = path.join(STORAGE_ROOT, 'Cars', stock_id, folder, filename);
+  const root = path.join(STORAGE_ROOT, 'Cars', stock_id);
+  const resolvedFile = path.resolve(abs);
+  const resolvedRoot = path.resolve(root);
+  const rel = path.relative(resolvedRoot, resolvedFile);
+  if (rel === '' || rel.startsWith('..') || path.isAbsolute(rel)) throw new Error('Invalid path');
+  if (!fs.existsSync(resolvedFile)) return { deleted: false };
+  fs.unlinkSync(resolvedFile);
+  return { deleted: true };
+}
+
 export function listVehicleFiles(stock_id) {
   const root = path.join(STORAGE_ROOT, 'Cars', stock_id);
   const result = {};

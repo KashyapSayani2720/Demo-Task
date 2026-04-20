@@ -927,13 +927,10 @@ tr:hover td{background:var(--s2);}
       <div style="display:flex;gap:8px;align-items:end;">
         <div class="fg" style="flex:1;"><label class="fl">Category</label><select class="fi" id="vd-upload-cat"><option>Photos</option><option>Documents</option><option>ServiceHistory</option><option>MOT</option><option>Purchase</option><option>Sale</option><option>Delivery</option><option>Collection</option></select></div>
         <div class="fg" style="flex:2;"><label class="fl">File</label><input class="fi" type="file" id="vd-upload-file"></div>
-        <button class="btn btn-p btn-sm" onclick="uploadVehicleFile()">Upload</button>
+        <div class="fg" style="flex:0"><button style="margin-bottom: 7px;" class="btn btn-p btn-sm" onclick="uploadVehicleFile()">Upload</button></div>
       </div>
     </div>
     <div id="vd-files" style="max-height:300px;overflow-y:auto;"></div>
-    <div style="margin-top:12px;display:flex;gap:8px;">
-      <button class="btn btn-g btn-sm" onclick="openVehicleFolder()">Open Folder</button>
-    </div>
   </div>
 </div>
 <div class="moverlay" id="m-addvehicle">
@@ -1503,7 +1500,7 @@ function renderSold() {
     document.getElementById('sold-tbody').innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--text3);padding:18px;">No matching sold vehicles found.</td></tr>';
     return;
   }
-  document.getElementById('sold-tbody').innerHTML=arr.map((v,i)=>'<tr><td>'+mLabel(v.month)+'</td><td class="tdm">'+v.make_model+'</td><td><span class="mono">'+v.plate+'</span></td><td>'+fmtD(v.date_acquired)+'</td><td>'+(v.date_sold?fmtD(v.date_sold):'—')+'</td><td>'+(v.source||'—')+'</td><td>'+v.days_in_stock+'d</td><td>'+fmt0(v.total_cost)+'</td><td>'+fmt0(v.sold_price)+'</td><td style="color:'+(v.profit>=0?'var(--green)':'var(--red)')+';font-weight:700">'+fmt(v.profit)+'</td><td>'+(v.investor||'SA')+'</td><td><button class="btn btn-g btn-xs" disabled">Full</button></td></tr>').join('');
+  document.getElementById('sold-tbody').innerHTML=arr.map((v,i)=>'<tr><td>'+mLabel(v.month)+'</td><td class="tdm">'+v.make_model+'</td><td><span class="mono">'+v.plate+'</span></td><td>'+fmtD(v.date_acquired)+'</td><td>'+(v.date_sold?fmtD(v.date_sold):'—')+'</td><td>'+(v.source||'—')+'</td><td>'+v.days_in_stock+'d</td><td>'+fmt0(v.total_cost)+'</td><td>'+fmt0(v.sold_price)+'</td><td style="color:'+(v.profit>=0?'var(--green)':'var(--red)')+';font-weight:700">'+fmt(v.profit)+'</td><td>'+(v.investor||'SA')+'</td><td><button class="btn btn-g btn-xs" onclick="showSoldBreakdown('+i+')">Full</button></td></tr>').join('');
 }
 
 // ════════════════════════════════════════════
@@ -2280,14 +2277,7 @@ async function uploadVehicleFile(){
     openStockBreakdown(stockData.find(v=>v.stock_id===currentDetailStockId)?.plate || '');
   } catch(e) { alert('Upload error: '+e.message); }
 }
-async function openVehicleFolder(){
-  if(!currentDetailStockId) return;
-  try {
-    const res = await fetch('/api/vehicles/'+currentDetailStockId+'/open-folder');
-    const data = await res.json();
-    if(!res.ok) alert('Could not open folder: '+(data.error||'Unknown error'));
-  } catch(e) { alert('Error: '+e.message); }
-}
+
 function showSoldBreakdown(i){
   const v = APP_DATA.sold[i];
   if(!v) return;
@@ -3144,6 +3134,7 @@ function renderPhotoGrid(plate) {
   const np = normP(plate);
   const pics = vehiclePhotos[np]||[];
   return pics.map((ph,i)=>`<div class="photo-card${ph.cover?' cover':''}${ph.selected?' selected':''}" ondragstart="dragPhotoStart(event,${i})" ondragover="event.preventDefault()" ondrop="dragPhotoDrop(event,${i})" draggable="true">${ph.url?`<img src="${ph.url}" alt="${escHtml(ph.tag||'')}" onerror="this.style.display='none'">`:`<div style="width:100%;height:100%;background:var(--s3);display:flex;align-items:center;justify-content:center;font-size:22px;">📷</div>`}<div class="ph-overlay"><select class="ph-tag" style="background:rgba(0,0,0,.7);border:none;color:#fff;font-size:9px;font-weight:700;cursor:pointer;border-radius:4px;padding:1px 3px;" onchange="setPhotoTag('${np}',${i},this.value)">${PHOTO_ORDER_TEMPLATE.map(t=>`<option value="${t}" ${ph.tag===t?'selected':''}>${PHOTO_TAG_LABELS[t]}</option>`).join('')}</select><button class="ph-cover-btn" onclick="setCoverPhoto('${np}',${i})">${ph.cover?'★ Cover':'☆ Set Cover'}</button></div><div class="ph-order">${i+1}</div><button class="ph-del" onclick="deletePhoto('${np}',${i})">✕</button></div>`).join('');
+  return pics.map((ph,i)=>`<div class="photo-card${ph.cover?' cover':''}${ph.selected?' selected':''}" ondragstart="dragPhotoStart(event,${i})" ondragover="event.preventDefault()" ondrop="dragPhotoDrop(event,${i})" draggable="true">${ph.url?`<img src="${ph.url}" alt="${escHtml(ph.tag||'')}" onerror="this.style.display='none'">`:`<div style="width:100%;height:100%;background:var(--s3);display:flex;align-items:center;justify-content:center;font-size:22px;">📷</div>`}<div class="ph-overlay"><select class="ph-tag" style="background:rgba(0,0,0,.7);border:none;color:#fff;font-size:9px;font-weight:700;cursor:pointer;border-radius:4px;padding:1px 3px;" onchange="setPhotoTag('${np}',${i},this.value)">${PHOTO_ORDER_TEMPLATE.map(t=>`<option value="${t}" ${ph.tag===t?'selected':''}>${PHOTO_TAG_LABELS[t]}</option>`).join('')}</select><button class="ph-cover-btn" onclick="setCoverPhoto('${np}',${i})">${ph.cover?'★ Cover':'☆ Set Cover'}</button></div><div class="ph-order">${i+1}</div><button type="button" class="ph-del" draggable="false" onclick="event.stopPropagation();event.preventDefault();deletePhoto('${np}',${i})">✕</button></div>`).join('');
 }
 function handleMediaUpload(input) {
   const plate = currentMediaPlate;
@@ -3206,15 +3197,56 @@ function setPhotoTag(np, idx, tag) {
   vehiclePhotos[np] = pics;
   saveToStorage();
 }
-function deletePhoto(np, idx) {
+function normalizePhotoStoragePath(u) {
+  if (u == null || typeof u !== 'string') return null;
+  const s = u.trim().replace(/\\/g, '/');
+  const i = s.toLowerCase().indexOf('/files/cars/');
+  if (i >= 0) return s.slice(i).split('?')[0].split('#')[0];
+  if (s.startsWith('/files/')) return s.split('?')[0].split('#')[0];
+  return null;
+}
+function photoStoragePath(ph) {
+  if (!ph) return null;
+  return normalizePhotoStoragePath(ph.backendPath) || normalizePhotoStoragePath(ph.url);
+}
+/** When url/backendPath were cleared but id is srv-{diskFilename} from API merge */
+function inferPhotoStoragePath(ph, stockId) {
+  const direct = photoStoragePath(ph);
+  if (direct) return direct;
+  if (!ph || !stockId) return null;
+  const id = String(ph.id || '');
+  if (id.startsWith('srv-')) {
+    const fname = id.slice(4);
+    if (fname) return `/files/Cars/${stockId}/Photos/${fname}`;
+  }
+  return null;
+}
+async function deletePhoto(np, idx) {
   const pics = vehiclePhotos[np];
   if(!pics) return;
+  if (!pics || !pics[idx]) return;
+  const ph = pics[idx];
+  const v = findV(np);
+  const serverPath = inferPhotoStoragePath(ph, v && v.stock_id);
+  if (v && v.stock_id && serverPath) {
+    try {
+      await api('POST', '/vehicles/' + v.stock_id + '/delete-file', { path: serverPath });
+    } catch (e) {
+      console.warn('Could not delete file on server:', e);
+    }
+  }
+  if (ph.url && String(ph.url).startsWith('blob:')) {
+    try { URL.revokeObjectURL(ph.url); } catch (_) {}
+  }
   pics.splice(idx,1);
   if(pics.length && !pics.some(p=>p.cover)) pics[0].cover=true;
+  if (pics.length && !pics.some(p => p.cover)) pics[0].cover = true;
   vehiclePhotos[np] = pics;
   saveToStorage();
   if(currentMediaPlate && normP(currentMediaPlate)===np) refreshMediaModal();
+  if (currentMediaPlate && normP(currentMediaPlate) === np) refreshMediaModal();
   if(currentATListing && normP(currentATListing.plate)===np) setInner('at-photo-grid', renderPhotoGrid(currentATListing.plate));
+  if (currentATListing && normP(currentATListing.plate) === np) setInner('at-photo-grid', renderPhotoGrid(currentATListing.plate));
 }
 function autoOrderPhotos() {
   const np = currentATListing ? normP(currentATListing.plate) : (currentMediaPlate ? normP(currentMediaPlate) : '');
