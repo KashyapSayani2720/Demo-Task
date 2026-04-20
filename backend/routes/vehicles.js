@@ -8,7 +8,7 @@ import Investor from '../models/Investor.js';
 import MoneyIn from '../models/MoneyIn.js';
 import { nextStockId } from '../services/stockIdGenerator.js';
 import { normalizePlate, normalizeDate, normalizeMonth, normalizeAmount, normalizeString } from '../services/normalize.js';
-import { createVehicleFolders, listVehicleFiles, deleteVehicleFile} from '../services/fileManager.js';
+import { createVehicleFolders, listVehicleFiles, deleteVehicleFile } from '../services/fileManager.js';
 import upload from '../middleware/upload.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -123,6 +123,7 @@ function pickFilePathFromRequest(req) {
   if (Array.isArray(q) && typeof q[0] === 'string' && q[0].trim()) return q[0].trim();
   return '';
 }
+
 // POST /api/vehicles/:stock_id/delete-file — remove one file (JSON body; reliable on all clients)
 router.post('/:stock_id/delete-file', async (req, res, next) => {
   try {
@@ -137,6 +138,7 @@ router.post('/:stock_id/delete-file', async (req, res, next) => {
     next(err);
   }
 });
+
 // DELETE /api/vehicles/:stock_id/files — remove one file (register before DELETE /:stock_id)
 router.delete('/:stock_id/files', async (req, res, next) => {
   try {

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import { fileURLToPath } from 'url';
 import { generateWorkbook } from '../services/excelExport.js';
 import { parseWorkbook } from '../services/excelImport.js';
@@ -19,7 +20,8 @@ import MoneyOut from '../models/MoneyOut.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const upload = multer({ dest: path.join(__dirname, '..', '..', 'storage', 'temp') });
+// Use os.tmpdir() so this works on Vercel (/tmp) and locally
+const upload = multer({ dest: os.tmpdir() });
 const router = Router();
 
 // GET /api/excel/export — download workbook

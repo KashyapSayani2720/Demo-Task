@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/KashyapSayani2720/Demo-Task#readme",
   "dependencies": {
+    "@vercel/blob": "^2.3.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "exceljs": "^4.4.0",
